@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620" role="img" aria-labelledby="title desc">
+  <title id="title">RoboArc architecture</title>
+  <desc id="desc">Authoring tools compile to Workflow IR, which runs in the RoboArc Runtime through capability adapters backed by ROS 2, SDKs, REST, or gRPC and ultimately controls a robot.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .box { fill:#f8fafc; stroke:#cbd5e1; stroke-width:2; }
+      .core { fill:#eff6ff; stroke:#3b82f6; stroke-width:2.5; }
+      .label { font:600 19px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#0f172a; text-anchor:middle; }
+      .small { font:400 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#475569; text-anchor:middle; }
+      .section { font:700 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#64748b; letter-spacing:1.6px; text-anchor:middle; }
+      .line { stroke:#64748b; stroke-width:2.2; fill:none; marker-end:url(#arrow); }
+    </style>
+  </defs>
+
+  <text x="550" y="30" class="section">AUTHORING</text>
+
+  <rect x="150" y="50" width="220" height="82" rx="14" class="box"/>
+  <text x="260" y="83" class="label">Blocks</text>
+  <text x="260" y="107" class="small">Blockly first</text>
+
+  <rect x="440" y="50" width="220" height="82" rx="14" class="box"/>
+  <text x="550" y="83" class="label">Flow</text>
+  <text x="550" y="107" class="small">optional later view</text>
+
+  <rect x="730" y="50" width="220" height="82" rx="14" class="box"/>
+  <text x="840" y="83" class="label">AI / LLM</text>
+  <text x="840" y="107" class="small">future authoring path</text>
+
+  <path d="M260 132 L260 157 L550 157 L550 183" class="line"/>
+  <path d="M550 132 L550 183" class="line"/>
+  <path d="M840 132 L840 157 L550 157 L550 183" class="line"/>
+
+  <rect x="390" y="185" width="320" height="88" rx="16" class="core"/>
+  <text x="550" y="221" class="label">Typed Workflow IR</text>
+  <text x="550" y="247" class="small">canonical program representation</text>
+
+  <path d="M550 273 L550 315" class="line"/>
+
+  <rect x="350" y="318" width="400" height="96" rx="16" class="core"/>
+  <text x="550" y="355" class="label">RoboArc Runtime</text>
+  <text x="550" y="381" class="small">validate · execute · observe · cancel</text>
+
+  <path d="M550 414 L550 452" class="line"/>
+
+  <text x="550" y="445" class="section">CAPABILITY ADAPTERS</text>
+
+  <rect x="100" y="465" width="190" height="72" rx="14" class="box"/>
+  <text x="195" y="497" class="label">ROS 2</text>
+  <text x="195" y="520" class="small">actions · services</text>
+
+  <rect x="330" y="465" width="190" height="72" rx="14" class="box"/>
+  <text x="425" y="497" class="label">SDK</text>
+  <text x="425" y="520" class="small">Python · native</text>
+
+  <rect x="560" y="465" width="190" height="72" rx="14" class="box"/>
+  <text x="655" y="497" class="label">REST</text>
+  <text x="655" y="520" class="small">HTTP APIs</text>
+
+  <rect x="790" y="465" width="190" height="72" rx="14" class="box"/>
+  <text x="885" y="497" class="label">gRPC / …</text>
+  <text x="885" y="520" class="small">other transports</text>
+
+  <path d="M550 452 L195 452 L195 465" class="line"/>
+  <path d="M550 452 L425 452 L425 465" class="line"/>
+  <path d="M550 452 L655 452 L655 465" class="line"/>
+  <path d="M550 452 L885 452 L885 465" class="line"/>
+
+  <path d="M195 537 L195 562 L550 562" class="line" style="marker-end:none"/>
+  <path d="M425 537 L425 562" class="line" style="marker-end:none"/>
+  <path d="M655 537 L655 562" class="line" style="marker-end:none"/>
+  <path d="M885 537 L885 562 L550 562" class="line" style="marker-end:none"/>
+  <path d="M550 562 L550 580" class="line"/>
+
+  <rect x="460" y="580" width="180" height="38" rx="12" class="core"/>
+  <text x="550" y="605" class="label" style="font-size:17px">Robot</text>
+</svg>
