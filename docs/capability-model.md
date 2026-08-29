@@ -1,6 +1,6 @@
 # Capability Model
 
-A RoboArc capability is a stable, product-level robot behavior. It describes **what a robot can do** without exposing **how that behavior is implemented**.
+A RoboArc capability is a stable, product-level robot behavior. It describes **what a robot can do** without exposing **how it is implemented**.
 
 ```text
 Robot native interface
@@ -15,19 +15,16 @@ ROS 2 / SDK / REST / gRPC / ...
 
 ## Standard and robot-specific capabilities
 
-Shared capabilities use stable semantic IDs when multiple robots can reasonably implement the same contract:
+Shared capabilities should use stable semantic IDs only after multiple adapters demonstrate compatible contracts:
 
 ```text
-navigation.goto
+navigation.goto_location
 navigation.stop
 head.look_at
 speech.say
-manipulation.open_gripper
-manipulation.close_gripper
-perception.detect_object
 ```
 
-Robot-specific behaviors should remain explicit rather than being forced into a false common denominator:
+Robot-specific behavior remains explicit rather than being forced into a false common denominator:
 
 ```text
 unitree.dance
@@ -35,20 +32,25 @@ reachy.antennas.wave
 tiago.torso.raise
 ```
 
+Early MockAdapter capabilities use the `demo.*` namespace so test fixtures do not accidentally define standards.
+
 ## Minimal manifest
 
-A v0.1 manifest can remain intentionally small:
+The implemented manifest is intentionally small and versioned:
 
 ```yaml
-id: navigation.goto
+manifest_schema_version: 1
+id: navigation.goto_location
 version: 1
-title: Go to
+title: Go to location
 category: Navigation
 
 inputs:
   target:
-    type: pose
+    type: map_location
     required: true
+
+outputs: {}
 
 execution:
   timeout_ms: 120000
@@ -56,101 +58,95 @@ execution:
 
 progress:
   mode: stage
+  source: null
 
 resources:
   - base_motion
 ```
 
-The manifest should drive as much generated behavior as practical:
+Supported primitive field types currently include string, integer, finite number, boolean, duration in milliseconds, and named map location. Fields may declare required/default/enum/minimum/maximum constraints where semantically valid.
+
+The manifest should drive:
 
 - Blockly block metadata;
 - inspector fields;
-- input validation;
+- preflight input validation;
+- runtime output validation;
 - capability discovery;
 - documentation;
 - compatibility checks.
 
-Specialized editor widgets should be introduced only for domain types that genuinely need them, such as map locations, poses, colors, images, or joint configurations.
+Specialized widgets should be introduced only with explicit domain serialization rules.
 
-## Handler contract
+## Exact capability references
 
-The first runtime implementation can use a Python contract similar to:
+A workflow does not invoke a bare capability name:
+
+```json
+{
+  "capability": {
+    "id": "navigation.goto_location",
+    "version": 1
+  }
+}
+```
+
+A robot profile similarly lists exact contract references. Adapter upgrades must not silently reinterpret an existing workflow as a new incompatible capability version.
+
+## Adapter invocation contract
+
+The runtime asks an adapter to start one invocation:
 
 ```python
-async def execute(args: dict, ctx: ExecutionContext) -> CapabilityResult:
+async def invoke(capability, args, context) -> CapabilityInvocation:
     ...
 ```
 
-`ExecutionContext` provides runtime services such as:
-
-- cancellation state;
-- structured logging;
-- progress reporting;
-- execution/node identifiers;
-- workflow variables;
-- deadlines/timeouts.
-
-A robot's existing API does not need to be redesigned for RoboArc. The adapter wraps it:
+The invocation exposes:
 
 ```python
-async def navigation_goto(args, ctx):
-    await robot.goto(args["target"])
-    return CapabilityResult.success()
+async def result() -> CapabilityResult: ...
+async def request_cancel() -> CancellationDisposition: ...
+async def detach() -> None: ...
 ```
+
+This lifecycle is more precise than treating every robot action as a cancellable Python coroutine. A local coroutine cancellation does not prove that the physical operation stopped.
+
+`ExecutionContext` supplies runtime services such as:
+
+- run, node, and invocation identifiers;
+- structured logging;
+- stage or percentage progress reporting;
+- progress provenance.
+
+Future contexts may add variables and deadlines once their semantics are part of Workflow IR.
 
 ## Execution traits
 
-Only a terminal result is required in the minimal contract.
+Only a terminal result is required. Richer behavior is progressive:
 
-| Trait | v0.1 contract | Meaning |
+| Trait | Current contract | Meaning |
 | --- | --- | --- |
 | result | required | success/failure/canceled/timeout |
-| progress | optional | running feedback |
-| cancel | optional | cooperative cancellation |
-| pause | deferred | suspend execution |
-| resume | deferred | resume suspended execution |
+| progress | optional | none/stage/percent |
+| cancellation | optional | native cancellation request and terminal acknowledgement |
+| pause/resume | deferred | suspend and resume native work |
 
-The UI must reflect unsupported traits rather than pretending they exist.
+The UI must expose unsupported cancellation instead of pretending it exists.
 
-## Progress model
+## Progress
 
-Progress should support increasing levels of fidelity.
-
-### None
-
-The adapter only knows that execution is running.
+Progress modes are:
 
 ```text
-Running...
+none
+stage
+percent
 ```
 
-### Stage
+Percentage progress must state whether it is native or estimated. Estimated progress must be presented as approximate.
 
-The adapter exposes meaningful phases:
-
-```text
-Planning -> Navigating -> Arriving
-```
-
-### Percent
-
-The adapter exposes or derives quantitative progress:
-
-```text
-53%
-```
-
-Percent progress should include provenance:
-
-```yaml
-progress:
-  mode: percent
-  source: native   # or estimated
-```
-
-Estimated progress must be presented as approximate. For example, navigation may estimate completion from path or remaining distance, but that estimate should not be confused with a native controller metric.
-
-A structured progress event may eventually contain:
+A structured progress event may contain:
 
 ```json
 {
@@ -166,42 +162,45 @@ A structured progress event may eventually contain:
 
 ## Robot profiles
 
-A robot profile declares which capabilities are available through a specific adapter/configuration:
+A profile declares the capabilities available through one adapter/configuration:
 
 ```yaml
+profile_schema_version: 1
 id: tiago-sim
+title: TIAGo Simulation
 adapter: tiago
-
 capabilities:
-  - navigation.goto
-  - navigation.stop
-  - head.look_at
-  - speech.say
-  - manipulation.pick
-  - manipulation.place
+  - id: navigation.goto_location
+    version: 1
+  - id: navigation.stop
+    version: 1
+  - id: head.look_at
+    version: 1
+  - id: speech.say
+    version: 1
 ```
 
-The editor should use the active profile to filter or annotate the available capability palette.
+The editor uses the active profile to generate or annotate its capability palette.
 
 ## Portability is semantic
 
-Two robots exposing `navigation.goto` are not automatically equivalent. A robust contract eventually needs to address:
+Matching IDs and versions are necessary but not sufficient. A robust shared contract eventually needs to define:
 
-- coordinate frame and pose conventions;
-- units and ranges;
+- coordinate frames and pose conventions;
+- units and valid ranges;
 - map/location identity;
 - speed and acceleration constraints;
 - preconditions and robot state;
 - workspace and payload limits;
-- asynchronous behavior and feedback;
+- feedback fidelity;
 - timeout and cancellation guarantees;
 - result/error taxonomy.
 
-v0.1 should not model all of these at once, but the manifest format should remain extensible enough to add them without redefining the capability identity.
+Standardize capabilities only after real adapters validate these assumptions.
 
 ## Resource declarations
 
-Capabilities may declare logical resources:
+Capabilities may declare logical resources such as:
 
 ```yaml
 resources:
@@ -216,4 +215,4 @@ resources:
   - left_gripper
 ```
 
-This allows future static validation or runtime arbitration to detect incompatible parallel actions. v0.1 may only validate obvious conflicts; a full resource scheduler is deferred.
+No parallel node is implemented yet. These declarations preserve a path toward future static conflict checks and resource arbitration without requiring a scheduler in the current core.
