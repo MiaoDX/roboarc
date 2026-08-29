@@ -1,47 +1,46 @@
 # Workflow IR
 
-The Workflow IR is RoboArc's canonical representation of a robot program.
+Workflow IR is RoboArc's canonical representation of a robot program:
 
 ```text
-Blockly workspace --compile--> Workflow IR --execute--> Runtime
+Blockly workspace --compile--> Workflow IR --validate/execute--> Runtime
 ```
 
-Blockly serialization is preserved so a user can reopen an editor exactly as they left it, but editor state is not the executable contract. This keeps RoboArc open to additional authoring surfaces such as a node graph or AI-generated workflows.
+Blockly serialization preserves editing state, but it is not the executable contract. This separation permits additional authoring surfaces without changing runtime semantics.
 
-## v0.1 node set
+## Implemented v0.1a node set
 
-Keep the first IR deliberately small:
+The current IR contains only:
 
-- `sequence`
-- `if`
-- `loop`
-- `wait`
-- `parallel`
-- `capability`
+- `sequence`;
+- `wait`;
+- `capability`.
 
-Features such as `retry`, `timeout`, `fallback`, `subflow`, `event`, `guard`, and explicit resource locks are useful, but should be introduced only after the vertical slice is stable.
+This is intentional. `if`, references, loops, parallelism, retry, timeout, fallback, subflow, event, and guard nodes are deferred until their types, scope, result propagation, side effects, and cancellation behavior are specified.
 
 ## Example
 
 ```json
 {
-  "schema_version": 1,
+  "workflow_schema_version": 1,
+  "id": "welcome-visitor",
+  "name": "Welcome visitor",
   "workflow": {
-    "id": "welcome-visitor",
+    "id": "root",
     "type": "sequence",
     "children": [
       {
-        "id": "go-reception",
-        "type": "capability",
-        "capability": "navigation.goto",
-        "args": {
-          "target": "reception"
-        }
+        "id": "settle",
+        "type": "wait",
+        "duration_ms": 250
       },
       {
         "id": "say-hello",
         "type": "capability",
-        "capability": "speech.say",
+        "capability": {
+          "id": "speech.say",
+          "version": 1
+        },
         "args": {
           "text": "Hello!"
         }
@@ -51,17 +50,24 @@ Features such as `retry`, `timeout`, `fallback`, `subflow`, `event`, `guard`, an
 }
 ```
 
-Stable node IDs are important even in v0.1 because runtime events, visual highlighting, logs, and future replay need to refer to the same logical node.
+Capability references include an exact contract version so adapter upgrades cannot silently change workflow meaning.
 
-## Project document
+## Stable node IDs
 
-A saved project may contain both editor state and canonical IR:
+Every node has a stable ID. Runtime events, visual highlighting, logs, and future timeline/replay features use that ID.
+
+The schema rejects duplicate IDs, excessive depth, and excessive node count. An editor should preserve IDs for logically unchanged blocks and assign new IDs only to new logical nodes.
+
+## Project documents
+
+Saved authoring projects keep format evolution separate:
 
 ```json
 {
-  "schema_version": 1,
+  "project_format_version": 1,
   "name": "Welcome visitor",
   "editor": {
+    "editor_state_version": 1,
     "type": "blockly",
     "state": {}
   },
@@ -69,60 +75,67 @@ A saved project may contain both editor state and canonical IR:
 }
 ```
 
-The `editor` field is allowed to evolve independently from the workflow schema.
+The editor state may evolve independently from Workflow IR. Execution always uses a validated current Workflow document, never raw Blockly state.
 
-## Values and references
+## Values
 
-v0.1 should favor JSON-native literal values and a minimal variable/reference mechanism rather than building a general expression language immediately.
+Current capability arguments are strict JSON literals validated against the selected manifest. The initial value vocabulary includes:
 
-A future typed value model may need domain types such as:
+- string;
+- integer;
+- finite number;
+- boolean;
+- duration in milliseconds;
+- named map location.
 
-- `pose`
-- `map_location`
-- `object_pose`
-- `joint_pose`
-- `image`
-- `duration`
-
-Those types should have explicit serialization and validation rules rather than being hidden inside arbitrary strings.
+Domain values such as poses, object poses, joint configurations, images, and frames require explicit serialization and semantic contracts before introduction.
 
 ## Validation
 
-Validation should happen before execution and should be able to report errors against node IDs. Initial checks should include:
+Validation occurs before execution and reports issues against stable node IDs. Current checks include:
 
-- known node type;
-- known capability ID;
-- required inputs present;
-- basic input type/range checks;
-- robot profile supports the requested capability;
-- structurally valid control flow;
-- obvious resource conflicts in parallel branches where possible.
+- known node shape through the discriminated schema;
+- unique and bounded node structure;
+- exact supported capability ID/version;
+- required inputs;
+- unknown inputs;
+- primitive type and range constraints;
+- strict JSON-compatible data.
 
-Validation is not a substitute for runtime safety checks in robot controllers.
+The runtime separately validates successful adapter output against the declared output contract.
+
+Validation is not a substitute for safety checks in robot controllers.
 
 ## Schema evolution
 
-Use an explicit integer `schema_version` from the first saved file. Do not build a migration framework until the schema actually changes, but require migrations to be deterministic and testable when they are introduced.
+RoboArc separates these version domains:
 
-Recommended policy:
+```text
+project_format_version
+workflow_schema_version
+editor_state_version
+manifest_schema_version
+profile_schema_version
+event_protocol_version
+capability contract version
+```
 
-1. readers reject unsupported future major schema versions;
-2. migrations transform old documents into the current canonical schema;
-3. editor-specific state has its own compatibility policy;
-4. runtime execution always operates on a validated current IR.
+Readers reject unsupported future schema versions. When a schema changes, migrations must be deterministic, testable, and produce the current canonical form before execution.
+
+## Future conditions and references
+
+A future conditional model should use a limited typed declarative structure rather than arbitrary expression evaluation, for example:
+
+```json
+{
+  "op": "eq",
+  "left": {"ref": "detect-person.result.found"},
+  "right": true
+}
+```
+
+Before implementing this, RoboArc must define output naming, scope, missing values, comparison types, and references to skipped or failed nodes.
 
 ## Relationship to Behavior Trees
 
-RoboArc's IR should not be forced to mirror BehaviorTree.CPP XML or any other runtime format. Behavior-tree semantics are a valuable reference for later fallback, retry, reactive conditions, and cancellation behavior, but the v0.1 IR should stay aligned with RoboArc's product model.
-
-A future compiler could target a behavior-tree runtime if that becomes useful.
-
-## AI compatibility
-
-An editor-neutral, typed IR also creates a safer future boundary for AI-assisted authoring:
-
-```text
-Natural language -> proposed Workflow IR -> validation -> visual review -> execution
-```
-
-The model should generate the same declarative representation a human editor produces, rather than arbitrary robot-control code.
+Workflow IR is not BehaviorTree.CPP XML and should not be forced to mirror one runtime. Behavior-tree semantics remain a useful reference for later fallback, retry, reactivity, halting, and subtree composition. A future compiler/backend can be evaluated after RoboArc's own contracts are stable.
