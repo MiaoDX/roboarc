@@ -1,0 +1,79 @@
+{
+  "$defs": {
+    "EventType": {
+      "enum": [
+        "run.started",
+        "run.cancel_requested",
+        "run.finished",
+        "node.started",
+        "node.cancel_requested",
+        "node.finished",
+        "capability.progress",
+        "log",
+        "error"
+      ],
+      "title": "EventType",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Ordered, replayable event envelope sent to runtime clients.",
+  "properties": {
+    "data": {
+      "additionalProperties": true,
+      "title": "Data",
+      "type": "object"
+    },
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_protocol_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Event Protocol Version",
+      "type": "integer"
+    },
+    "node_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Node Id"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "seq": {
+      "minimum": 1,
+      "title": "Seq",
+      "type": "integer"
+    },
+    "type": {
+      "$ref": "#/$defs/EventType"
+    }
+  },
+  "required": [
+    "seq",
+    "run_id",
+    "type",
+    "occurred_at"
+  ],
+  "title": "RuntimeEvent",
+  "type": "object"
+}

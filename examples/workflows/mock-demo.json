@@ -1,0 +1,27 @@
+{
+  "workflow_schema_version": 1,
+  "id": "mock-demo",
+  "name": "Mock runtime demo",
+  "workflow": {
+    "id": "root",
+    "type": "sequence",
+    "children": [
+      {
+        "id": "settle",
+        "type": "wait",
+        "duration_ms": 25
+      },
+      {
+        "id": "hello",
+        "type": "capability",
+        "capability": {
+          "id": "demo.instant_success",
+          "version": 1
+        },
+        "args": {
+          "value": "hello"
+        }
+      }
+    ]
+  }
+}
