@@ -70,6 +70,17 @@ class RunHandle:
     def done(self) -> bool:
         return self._task.done()
 
+    @property
+    def state(self) -> RunState:
+        if self._task.done():
+            return self._task.result().state
+        if self._execution.cancel_event.is_set():
+            return RunState.CANCELING
+        return RunState.RUNNING
+
+    def result_if_done(self) -> RunResult | None:
+        return self._task.result() if self._task.done() else None
+
     async def cancel(self) -> bool:
         return await self._execution.request_cancel()
 
@@ -110,6 +121,7 @@ class Runtime:
         task = asyncio.create_task(execution.run(), name=f"roboarc:{run_id}")
         handle = RunHandle(execution, task)
         self._runs[run_id] = handle
+        await execution.started.wait()
         return handle
 
     async def run(self, workflow: WorkflowDocument) -> RunResult:
@@ -145,6 +157,7 @@ class _Execution:
         self.registry = registry
         self.config = config
         self.stream = EventStream(run_id)
+        self.started = asyncio.Event()
         self.cancel_event = asyncio.Event()
         self._cancel_lock = asyncio.Lock()
         self._terminal = False
@@ -171,6 +184,7 @@ class _Execution:
                 "state": RunState.RUNNING.value,
             },
         )
+        self.started.set()
         try:
             root_result = await self._execute_node(self.workflow.workflow)
             state = _run_state_from_node(root_result.state)
