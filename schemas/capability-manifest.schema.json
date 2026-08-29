@@ -1,0 +1,251 @@
+{
+  "$defs": {
+    "ExecutionTraits": {
+      "additionalProperties": false,
+      "properties": {
+        "cancellable": {
+          "default": false,
+          "title": "Cancellable",
+          "type": "boolean"
+        },
+        "timeout_ms": {
+          "default": 30000,
+          "maximum": 86400000,
+          "minimum": 1,
+          "title": "Timeout Ms",
+          "type": "integer"
+        }
+      },
+      "title": "ExecutionTraits",
+      "type": "object"
+    },
+    "ProgressMode": {
+      "enum": [
+        "none",
+        "stage",
+        "percent"
+      ],
+      "title": "ProgressMode",
+      "type": "string"
+    },
+    "ProgressSource": {
+      "enum": [
+        "native",
+        "estimated"
+      ],
+      "title": "ProgressSource",
+      "type": "string"
+    },
+    "ProgressSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/ProgressMode",
+          "default": "none"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProgressSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "ProgressSpec",
+      "type": "object"
+    },
+    "ValueSpec": {
+      "additionalProperties": false,
+      "description": "Minimal field schema suitable for validation and generated editors.",
+      "properties": {
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "enum": {
+          "anyOf": [
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enum"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "type": {
+          "$ref": "#/$defs/ValueType"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ValueSpec",
+      "type": "object"
+    },
+    "ValueType": {
+      "description": "Small v0.1 value vocabulary shared by manifests and editors.",
+      "enum": [
+        "string",
+        "integer",
+        "number",
+        "boolean",
+        "duration_ms",
+        "map_location"
+      ],
+      "title": "ValueType",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Stable product-level behavior exposed by an adapter.",
+  "properties": {
+    "category": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Category",
+      "type": "string"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "execution": {
+      "$ref": "#/$defs/ExecutionTraits"
+    },
+    "id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "inputs": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ValueSpec"
+      },
+      "title": "Inputs",
+      "type": "object"
+    },
+    "manifest_schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Manifest Schema Version",
+      "type": "integer"
+    },
+    "outputs": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ValueSpec"
+      },
+      "title": "Outputs",
+      "type": "object"
+    },
+    "progress": {
+      "$ref": "#/$defs/ProgressSpec"
+    },
+    "resources": {
+      "default": [],
+      "items": {
+        "pattern": "^[a-z][a-z0-9_.-]{0,127}$",
+        "type": "string"
+      },
+      "title": "Resources",
+      "type": "array"
+    },
+    "title": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "title",
+    "category"
+  ],
+  "title": "CapabilityManifest",
+  "type": "object"
+}

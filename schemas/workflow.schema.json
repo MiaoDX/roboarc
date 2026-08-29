@@ -1,0 +1,183 @@
+{
+  "$defs": {
+    "CapabilityNode": {
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "additionalProperties": true,
+          "title": "Args",
+          "type": "object"
+        },
+        "capability": {
+          "$ref": "#/$defs/CapabilityRef"
+        },
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "capability",
+          "default": "capability",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "capability"
+      ],
+      "title": "CapabilityNode",
+      "type": "object"
+    },
+    "CapabilityRef": {
+      "additionalProperties": false,
+      "description": "Exact reference to a capability contract version.",
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "title": "CapabilityRef",
+      "type": "object"
+    },
+    "SequenceNode": {
+      "additionalProperties": false,
+      "properties": {
+        "children": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "capability": "#/$defs/CapabilityNode",
+                "sequence": "#/$defs/SequenceNode",
+                "wait": "#/$defs/WaitNode"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/SequenceNode"
+              },
+              {
+                "$ref": "#/$defs/WaitNode"
+              },
+              {
+                "$ref": "#/$defs/CapabilityNode"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Children",
+          "type": "array"
+        },
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "sequence",
+          "default": "sequence",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "children"
+      ],
+      "title": "SequenceNode",
+      "type": "object"
+    },
+    "WaitNode": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_ms": {
+          "maximum": 86400000,
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "wait",
+          "default": "wait",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "duration_ms"
+      ],
+      "title": "WaitNode",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Executable v0.1 workflow document.",
+  "properties": {
+    "id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "workflow": {
+      "discriminator": {
+        "mapping": {
+          "capability": "#/$defs/CapabilityNode",
+          "sequence": "#/$defs/SequenceNode",
+          "wait": "#/$defs/WaitNode"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SequenceNode"
+        },
+        {
+          "$ref": "#/$defs/WaitNode"
+        },
+        {
+          "$ref": "#/$defs/CapabilityNode"
+        }
+      ],
+      "title": "Workflow"
+    },
+    "workflow_schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Workflow Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "workflow"
+  ],
+  "title": "WorkflowDocument",
+  "type": "object"
+}
