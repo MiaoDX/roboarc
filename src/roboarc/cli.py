@@ -32,6 +32,10 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="request cancellation after a deterministic delay",
     )
+
+    serve_parser = subparsers.add_parser("serve", help="start the local HTTP/WebSocket runtime")
+    serve_parser.add_argument("--host", default="127.0.0.1")
+    serve_parser.add_argument("--port", type=int, default=8000)
     return parser
 
 
@@ -83,6 +87,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.cancel_after_ms is not None and args.cancel_after_ms < 0:
                 raise ValueError("--cancel-after-ms must be non-negative")
             return asyncio.run(_run(args.workflow, args.cancel_after_ms))
+        if args.command == "serve":
+            if not 1 <= args.port <= 65535:
+                raise ValueError("--port must be between 1 and 65535")
+            import uvicorn
+
+            uvicorn.run("roboarc.api.app:app", host=args.host, port=args.port, reload=False)
+            return 0
     except FileNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
