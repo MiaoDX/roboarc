@@ -19,6 +19,8 @@ Before opening a pull request, run:
 
 ```bash
 python -m compileall -q src scripts
+ruff check .
+mypy src/roboarc
 python -m pytest
 python scripts/generate_schemas.py
 git diff --exit-code -- schemas

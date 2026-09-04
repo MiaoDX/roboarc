@@ -1,0 +1,11 @@
+[
+  {
+    "date": "2026-08-30",
+    "macrostructure": "Workbench",
+    "theme": "Cobalt",
+    "enrichment": "actual Blockly workspace",
+    "nav": "operational product header",
+    "footer": "none",
+    "brief": "RoboArc visual authoring and runtime workbench"
+  }
+]

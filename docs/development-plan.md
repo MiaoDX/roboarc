@@ -55,7 +55,7 @@ Workflow JSON
 -> terminal result
 ```
 
-## v0.1b — Blockly authoring and runtime UI — next local milestone
+## v0.1b — Blockly authoring and runtime UI — implemented
 
 **Goal:** create and execute the supported Workflow IR from a browser without making editor state canonical.
 
@@ -77,6 +77,9 @@ Workflow JSON
 ### Exit criteria
 
 A fresh clone can create, save, reload, validate, and execute a mock workflow from the browser. Success, failure, progress, timeout, supported cancellation, and incomplete cancellation are visible and covered by browser/runtime tests.
+
+Delivered in the current implementation. CI runs the Web quality gates and the
+Chromium browser workflow suite on every push and pull request.
 
 ## v0.1c — First real-interface spike
 

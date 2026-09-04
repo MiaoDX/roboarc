@@ -62,9 +62,10 @@ class EventStream:
         index = after_seq
         while True:
             async with self._condition:
-                await self._condition.wait_for(
-                    lambda: index < len(self._events) or self._closed
-                )
+                def ready(index: int = index) -> bool:
+                    return index < len(self._events) or self._closed
+
+                await self._condition.wait_for(ready)
                 pending = tuple(self._events[index:])
                 index = len(self._events)
                 closed = self._closed

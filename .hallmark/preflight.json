@@ -1,0 +1,9 @@
+{
+  "date": "2026-08-30",
+  "framework": "React 18 + TypeScript + Vite 8",
+  "fontStack": "No bundled web fonts; Cobalt token fallbacks preserve system availability",
+  "palette": "New locked OKLCH tokens in web/src/tokens.css",
+  "motion": "motion-cut; CSS transitions only",
+  "spacing": "4px token scale",
+  "preserved": ["Blockly 12", "Lucide React", "existing package dependencies", "canonical Workflow IR compiler"]
+}

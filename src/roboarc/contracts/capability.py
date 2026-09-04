@@ -78,7 +78,7 @@ class ValueSpec(ContractModel):
         return value
 
     @model_validator(mode="after")
-    def validate_constraints(self) -> "ValueSpec":
+    def validate_constraints(self) -> ValueSpec:
         if self.minimum is not None and self.maximum is not None and self.minimum > self.maximum:
             raise ValueError("minimum must not be greater than maximum")
         if (self.minimum is not None or self.maximum is not None) and self.type not in {
@@ -133,9 +133,10 @@ def validate_value_against_spec(
     elif spec.type is ValueType.DURATION_MS:
         if not isinstance(value, int) or isinstance(value, bool) or value < 0:
             type_error = "expected a non-negative integer duration in milliseconds"
-    elif spec.type is ValueType.MAP_LOCATION:
-        if not isinstance(value, str) or not value.strip():
-            type_error = "expected a non-empty map location identifier"
+    elif spec.type is ValueType.MAP_LOCATION and (
+        not isinstance(value, str) or not value.strip()
+    ):
+        type_error = "expected a non-empty map location identifier"
 
     if type_error is not None:
         return type_error
@@ -159,7 +160,7 @@ class ProgressSpec(ContractModel):
     source: ProgressSource | None = None
 
     @model_validator(mode="after")
-    def source_matches_mode(self) -> "ProgressSpec":
+    def source_matches_mode(self) -> ProgressSpec:
         if self.mode is ProgressMode.PERCENT and self.source is None:
             raise ValueError("percent progress must declare native or estimated provenance")
         if self.mode is not ProgressMode.PERCENT and self.source is not None:

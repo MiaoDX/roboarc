@@ -40,7 +40,7 @@ class CapabilityRegistry:
         self._manifests = mapping
 
     @classmethod
-    def from_adapter(cls, adapter: CapabilityAdapter) -> "CapabilityRegistry":
+    def from_adapter(cls, adapter: CapabilityAdapter) -> CapabilityRegistry:
         return cls(adapter.profile, adapter.manifests)
 
     @property

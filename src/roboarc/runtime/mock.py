@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
-from typing import Any
+from collections.abc import Callable, Coroutine
 
 from roboarc.contracts import (
     CapabilityManifest,
@@ -25,7 +24,8 @@ from roboarc.runtime.adapter import CancellationDisposition, CapabilityInvocatio
 from roboarc.runtime.context import ExecutionContext
 
 Handler = Callable[
-    [dict[str, object], ExecutionContext, asyncio.Event], Awaitable[CapabilityResult]
+    [dict[str, object], ExecutionContext, asyncio.Event],
+    Coroutine[object, object, CapabilityResult],
 ]
 
 
@@ -137,7 +137,7 @@ class MockAdapter:
         cancel_event: asyncio.Event,
     ) -> CapabilityResult:
         del cancel_event
-        delay = int(args.get("stage_delay_ms", 10)) / 1000
+        delay = _int_arg(args, "stage_delay_ms", 10) / 1000
         for stage in ("planning", "executing", "finishing"):
             await context.report_progress(stage=stage, message=f"Mock stage: {stage}")
             await asyncio.sleep(delay)
@@ -150,8 +150,8 @@ class MockAdapter:
         cancel_event: asyncio.Event,
     ) -> CapabilityResult:
         del cancel_event
-        steps = int(args.get("steps", 4))
-        delay = int(args.get("step_delay_ms", 5)) / 1000
+        steps = _int_arg(args, "steps", 4)
+        delay = _int_arg(args, "step_delay_ms", 5) / 1000
         for index in range(steps + 1):
             percent = 100 * index / steps
             await context.report_progress(
@@ -184,9 +184,9 @@ class MockAdapter:
         context: ExecutionContext,
         cancel_event: asyncio.Event,
     ) -> CapabilityResult:
-        duration_ms = int(args.get("duration_ms", 200))
-        tick_ms = int(args.get("tick_ms", 10))
-        cleanup_ms = int(args.get("cleanup_ms", 5))
+        duration_ms = _int_arg(args, "duration_ms", 200)
+        tick_ms = _int_arg(args, "tick_ms", 10)
+        cleanup_ms = _int_arg(args, "cleanup_ms", 5)
         elapsed = 0
         while elapsed < duration_ms:
             if cancel_event.is_set():
@@ -204,8 +204,15 @@ class MockAdapter:
         cancel_event: asyncio.Event,
     ) -> CapabilityResult:
         del context, cancel_event
-        await asyncio.sleep(int(args.get("duration_ms", 100)) / 1000)
+        await asyncio.sleep(_int_arg(args, "duration_ms", 100) / 1000)
         return CapabilityResult(status=ResultStatus.SUCCESS, output={"completed": True})
+
+
+def _int_arg(args: dict[str, object], name: str, default: int) -> int:
+    value = args.get(name, default)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"mock argument {name!r} must be an integer")
+    return value
 
 
 def _build_manifests() -> tuple[CapabilityManifest, ...]:

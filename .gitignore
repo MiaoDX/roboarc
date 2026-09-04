@@ -11,3 +11,6 @@ build/
 htmlcov/
 .env
 .DS_Store
+.serena/
+web/playwright-report/
+web/test-results/

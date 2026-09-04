@@ -4,7 +4,7 @@
 
 Visual programming for robot behaviors, backed by a small observable runtime and editor-neutral contracts.
 
-RoboArc composes product-level robot capabilities instead of exposing ROS topics, vendor SDK calls, or transport details directly in workflows. Blockly is the first planned authoring surface, but the canonical program is a typed Workflow IR that can target different robots through capability adapters.
+RoboArc composes product-level robot capabilities instead of exposing ROS topics, vendor SDK calls, or transport details directly in workflows. The React workbench embeds Blockly for authoring, but the canonical program is a typed Workflow IR that can target different robots through capability adapters.
 
 <p align="center">
   <img src="docs/assets/architecture.svg" alt="RoboArc architecture" width="900" />
@@ -12,7 +12,7 @@ RoboArc composes product-level robot capabilities instead of exposing ROS topics
 
 ## Current status
 
-The repository is in the **v0.1 core implementation** stage. The current branch contains:
+The repository is in the **v0.1b visual authoring** stage. The current branch contains:
 
 - strict, versioned Pydantic contracts for Workflow IR, project files, capability manifests, robot profiles, validation reports, execution results, and runtime events;
 - checked-in JSON Schemas generated from those contracts;
@@ -20,9 +20,10 @@ The repository is in the **v0.1 core implementation** stage. The current branch 
 - a Python `asyncio` runtime with deterministic validation, ordered event history, deadlines, cooperative cancellation, and truthful cancellation failure reporting;
 - a deterministic `MockAdapter` covering success, staged progress, percentage progress, failure, cancellable work, and uncancellable work;
 - a FastAPI service for discovery, validation, run control, event replay, and live WebSocket events;
+- a React/TypeScript/Vite workbench with embedded Blockly authoring, manifest-driven arguments, project save/load, validation, run controls, and runtime telemetry;
 - tests for contracts, runtime state transitions, adapter conformance, cancellation, timeout, CLI behavior, and HTTP/WebSocket integration.
 
-The Blockly Web editor and real robot adapters are intentionally not included yet. The next implementation slice is the browser authoring/runtime UI, followed by a thin ROS 2 Action adapter test before TIAGo integration.
+Real robot adapters are intentionally not included yet. The next implementation slice is a thin ROS 2 Action adapter test before TIAGo integration.
 
 ## Quick start
 
@@ -47,6 +48,18 @@ Start the local runtime API:
 ```bash
 roboarc serve --host 127.0.0.1 --port 8000
 ```
+
+Start the Web workbench in another terminal:
+
+```bash
+cd web
+npm ci
+npm run dev
+```
+
+The workbench opens at `http://127.0.0.1:5173` and proxies the API to
+`http://127.0.0.1:8000`. Set `ROBOARC_API_TARGET` when the API uses another
+local port. Run the browser workflow gate with `npm run test:e2e`.
 
 The OpenAPI UI is available at `/docs`. Core endpoints are under `/api/v1`:
 
@@ -83,10 +96,14 @@ schemas/                 Generated JSON Schemas
 examples/workflows/      Executable Workflow IR examples
 scripts/                 Schema generation tooling
 tests/                   Contract, runtime, adapter, CLI, and API tests
+web/src/                 React shell, Blockly editor, compiler, and runtime UI
+web/e2e/                 Browser workflow and responsive-layout tests
 ```
 
 ## Documentation
 
+- [Current status](STATUS.md)
+- [Architecture overview](ARCHITECTURE.md)
 - [Architecture](docs/architecture.md)
 - [Design principles](docs/design-principles.md)
 - [Capability model](docs/capability-model.md)

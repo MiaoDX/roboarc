@@ -1,6 +1,6 @@
-# Implementation Status and Local Handoff
+# Implementation Status
 
-## Completed in the current core slice
+## Completed through v0.1b
 
 ### Contracts
 
@@ -40,11 +40,24 @@ These names are intentionally demo-specific. They test the framework without pre
 
 The FastAPI service supports capability discovery, validation, start/cancel control, run snapshots, HTTP event replay, and live WebSocket events. Runs and event histories are in-memory and process-local by design.
 
+### Web workbench
+
+- React/TypeScript/Vite application shell with an embedded Blockly 12 editor.
+- Capability toolbox and manifest-driven argument inspector from runtime discovery.
+- Supported `sequence`, `wait`, and `capability` blocks with stable node IDs.
+- Deterministic compilation to Workflow IR and local schema validation.
+- Atomic project save/load with Blockly editor state kept separate from canonical IR.
+- Backend validation, run/stop controls, block highlighting, progress, logs,
+  errors, duration, and terminal results.
+- Reconnecting WebSocket consumption with `after_seq` replay and duplicate-event filtering.
+
 ### Quality gates
 
 The test suite covers contract strictness, generated schema drift, registry conformance, argument validation, ordered events, fail-fast behavior, cancellation acknowledgement, cancellation incompleteness, timeout cleanup, adapter output violations, CLI execution, and HTTP/WebSocket behavior.
 
-GitHub Actions runs the suite on Python 3.11, 3.12, and 3.13.
+GitHub Actions runs the Python suite on 3.11, 3.12, and 3.13. The Web job runs
+Prettier, ESLint, TypeScript, 23 unit tests, schema drift checks, a production
+build, seven Chromium workflows, and the dependency audit.
 
 ## Deliberately not implemented
 
@@ -55,31 +68,11 @@ GitHub Actions runs the suite on Python 3.11, 3.12, and 3.13.
 - persistent or restartable runs;
 - authentication, multi-user authorization, databases, or cloud services;
 - arbitrary code execution;
-- Blockly/React Web authoring;
 - ROS 2, TIAGo, Reachy 2, simulator, or hardware adapters.
 
-## Recommended local continuation
+## Recommended continuation
 
-The next slice is better performed in a local Codex/devcontainer environment because it needs Node package installation, interactive browser testing, and then ROS/simulator dependencies.
-
-### 1. Web authoring slice
-
-Create a React + TypeScript + Vite application with Blockly 12. Use `/api/v1/capabilities` to generate the palette and inspector; compile Blockly state to the checked-in Workflow IR contract rather than generated Python.
-
-Minimum UI scope:
-
-- capability-driven toolbox;
-- `sequence`, `wait`, and capability blocks only;
-- project save/load preserving editor state separately from canonical IR;
-- validate, Run, and Stop controls;
-- block highlighting by stable `node_id`;
-- event/log panel with reconnect using `after_seq`.
-
-### 2. Cross-language contract tests
-
-Validate the same golden Workflow IR fixtures in Python and TypeScript. The browser must reject unsupported schema versions and must never treat Blockly workspace serialization as executable source of truth.
-
-### 3. Thin ROS 2 Action spike
+### Thin ROS 2 Action spike
 
 Before installing the full TIAGo stack, implement a small ROS 2 Action test server and adapter. It should prove:
 
@@ -89,6 +82,6 @@ Before installing the full TIAGo stack, implement a small ROS 2 Action test serv
 - timeout cleanup;
 - no ROS imports in `roboarc.contracts` or `roboarc.runtime`.
 
-### 4. TIAGo integration
+### TIAGo integration
 
 Only after the thin Action spike passes should the adapter target TIAGo navigation/head behavior. Keep simulator tests outside the always-on core CI suite.

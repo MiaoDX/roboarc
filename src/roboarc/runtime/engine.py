@@ -26,7 +26,6 @@ from roboarc.contracts import (
     WorkflowNode,
 )
 from roboarc.runtime.adapter import (
-    CancellationDisposition,
     CapabilityAdapter,
     CapabilityInvocation,
 )
@@ -54,7 +53,7 @@ class WorkflowValidationError(ValueError):
 class RunHandle:
     """Control and observation handle for one in-memory run."""
 
-    def __init__(self, execution: "_Execution", task: asyncio.Task[RunResult]) -> None:
+    def __init__(self, execution: _Execution, task: asyncio.Task[RunResult]) -> None:
         self._execution = execution
         self._task = task
 

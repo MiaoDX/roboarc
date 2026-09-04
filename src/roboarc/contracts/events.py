@@ -114,7 +114,7 @@ class CapabilityResult(ContractModel):
         return value
 
     @model_validator(mode="after")
-    def status_matches_error(self) -> "CapabilityResult":
+    def status_matches_error(self) -> CapabilityResult:
         if self.status is ResultStatus.SUCCESS and self.error is not None:
             raise ValueError("successful capability results must not contain an error")
         if self.status in {ResultStatus.FAILURE, ResultStatus.TIMEOUT} and self.error is None:
