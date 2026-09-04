@@ -1,199 +1,62 @@
 # Development Plan
 
-The plan is organized around executable vertical slices. Each milestone must leave RoboArc usable, testable, and understandable; it should not create several partially connected subsystems.
+This file is the roadmap entry point. Each active milestone owns its detailed
+scope, decisions, phases, and verification in one flat `docs/plans/*.md` file;
+completed implementation truth belongs in `STATUS.md` and the linked docs.
 
-## v0.0 — Contract skeleton — implemented
+## Roadmap
 
-**Goal:** freeze the smallest external contracts before editor or robot integration work.
+| Milestone | Outcome | State | Detailed plan |
+| --- | --- | --- | --- |
+| v0.0 | Versioned contracts and generated schemas | Implemented | Historical summary below |
+| v0.1a | Observable runtime and deterministic MockAdapter | Implemented | Historical summary below |
+| v0.1b | React/Blockly authoring and runtime workbench | Implemented | Historical summary below |
+| v0.1c | First real ROS 2 Action lifecycle proof | Implemented | [v0.1c plan](plans/v0.1c-ros2-action.md) |
+| v0.2 | TIAGo simulation with a narrow useful capability set | Planned | Create after v0.1c evidence |
+| v0.3 | Portability proof through a second native interface | Planned | Create after v0.2 evidence |
+| v0.4 | Programming-model hardening driven by real workflows | Deferred | Create only when concrete demand exists |
+| v1.0 | Stable contracts and compatibility policy | Deferred | Requires evidence from prior milestones |
 
-Delivered:
+## Implemented Foundation
 
-- versioned Workflow IR and project documents;
-- capability manifests and exact capability references;
-- robot profiles;
-- execution result and runtime event contracts;
-- generated JSON Schemas;
-- deterministic contract tests.
+RoboArc currently has:
 
-The first IR deliberately contains only:
+- strict, versioned Workflow IR, project, capability, profile, result, and event contracts;
+- generated JSON Schemas and cross-language validation;
+- `sequence`, `wait`, and `capability` nodes;
+- an observable `asyncio` runtime with deadlines and truthful cancellation;
+- a deterministic MockAdapter, CLI, and FastAPI HTTP/WebSocket service;
+- a React/TypeScript/Blockly workbench with project round trips and runtime observation;
+- Python and Web static checks, unit tests, schema drift gates, and Chromium workflows in CI.
 
-```text
-sequence
-wait
-capability
-```
+See [STATUS.md](../STATUS.md) for current proof and
+[implementation status](implementation-status.md) for the implemented surface.
 
-`if`, variables, general loops, and parallelism remain deferred until their data, scope, cancellation, and result-propagation semantics are defined.
+## Future Milestone Intent
 
-## v0.1a — Observable mock runtime — implemented
+- **v0.2:** start with `navigation.goto_location`, `navigation.stop`,
+  `head.look_at`, and `speech.say`; prefer named map locations; defer manipulation.
+- **v0.3:** add profile selection and compatibility reporting, then run at least
+  three semantically shared capabilities through a non-ROS-facing adapter such
+  as the Reachy SDK/MuJoCo path.
+- **v0.4:** consider typed references, conditions, bounded repeat, parallelism,
+  retry/fallback, subflows, resource arbitration, and replay only when concrete
+  workflows justify their semantics.
+- **v1.0:** publish compatibility and migration policy for every external contract.
 
-**Goal:** execute validated Workflow IR against a deterministic MockAdapter and expose truthful runtime state.
+## Standing Boundaries
 
-Delivered:
+- Workflow IR stays declarative and editor-neutral.
+- ROS/vendor imports stay outside `roboarc.contracts` and `roboarc.runtime`.
+- Capability IDs become shared standards only after compatible real adapters prove them.
+- Cancellation request acceptance never implies terminal cancellation.
+- Authentication, persistence, collaboration, scheduling, arbitrary code
+  execution, fleet orchestration, and a Rust rewrite are not v0.x core goals.
+- Simulator and hardware tests remain separate from always-on core CI.
 
-- Python, Pydantic, and `asyncio` runtime;
-- capability/profile preflight validation;
-- fail-fast sequence execution;
-- ordered event history and subscriptions;
-- per-capability default timeout handling;
-- explicit cancellation request and cleanup phases;
-- adapter result/output normalization and validation;
-- six deterministic mock capability scenarios;
-- CLI validation and execution;
-- FastAPI HTTP/WebSocket service;
-- in-memory run state and event replay;
-- unit and integration tests across supported Python versions.
+## Quality Floor
 
-Exit path:
-
-```text
-Workflow JSON
--> validate
--> Runtime
--> MockAdapter
--> ordered events
--> terminal result
-```
-
-## v0.1b — Blockly authoring and runtime UI — implemented
-
-**Goal:** create and execute the supported Workflow IR from a browser without making editor state canonical.
-
-### Web
-
-- React + TypeScript + Vite;
-- Blockly 12;
-- capability-driven toolbox from runtime discovery;
-- `sequence`, `wait`, and capability blocks;
-- manifest-driven argument inspector;
-- separate Blockly editor state and canonical Workflow IR in saved projects;
-- deterministic compiler from workspace to Workflow IR;
-- local schema validation before API submission;
-- Run and Stop controls;
-- current block highlighting using stable node IDs;
-- progress, logs, errors, duration, and terminal result panel;
-- WebSocket reconnect and replay using `after_seq`.
-
-### Exit criteria
-
-A fresh clone can create, save, reload, validate, and execute a mock workflow from the browser. Success, failure, progress, timeout, supported cancellation, and incomplete cancellation are visible and covered by browser/runtime tests.
-
-Delivered in the current implementation. CI runs the Web quality gates and the
-Chromium browser workflow suite on every push and pull request.
-
-## v0.1c — First real-interface spike
-
-**Goal:** validate the adapter lifecycle against a genuine asynchronous robot interface before depending on a full simulator.
-
-Implement a narrow ROS 2 Action test server and adapter package outside the runtime core. Exercise:
-
-- action goal dispatch;
-- native feedback to RoboArc progress;
-- success/failure result mapping;
-- cancel acceptance and completion;
-- unavailable action server;
-- timeout with incomplete cleanup;
-- adapter conformance tests.
-
-### Exit criteria
-
-The same Workflow IR/runtime code used by MockAdapter drives the ROS 2 Action test adapter, and the core packages contain no ROS-specific imports.
-
-## v0.2 — TIAGo simulation
-
-**Goal:** prove the adapter boundary with a nontrivial ROS robot stack.
-
-Start with a narrow capability set:
-
-```text
-navigation.goto_location
-navigation.stop
-head.look_at
-speech.say
-```
-
-Prefer named map locations before attempting a portable cross-robot pose contract. Add manipulation only after navigation, interaction, feedback, and cancellation are reliable.
-
-### Exit criteria
-
-At least one useful visual workflow runs end-to-end in TIAGo simulation with live runtime feedback and truthful cancellation behavior. Simulator setup is containerized and does not become a dependency of the core test suite.
-
-## v0.3 — Portability proof
-
-**Goal:** execute a semantically shared workflow through a second native interface style.
-
-Leading showcase candidate: Reachy 2 through its SDK/MuJoCo path.
-
-Add:
-
-- robot profile selection;
-- capability compatibility reporting;
-- a second adapter that is not ROS-facing at the capability-handler boundary;
-- explicit distinction between shared and robot-specific capabilities;
-- reusable adapter conformance scenarios.
-
-### Exit criteria
-
-At least three meaningful shared capabilities run with unchanged Workflow IR on both reference profiles. Portability claims must document frames, units, preconditions, cancellation, and result semantics.
-
-## v0.4 — Programming-model hardening
-
-Only after concrete workflows expose the need, consider:
-
-- typed outputs and references;
-- limited declarative conditions;
-- bounded repeat;
-- `parallel_all` with fully specified join and sibling-cancellation semantics;
-- explicit timeout policies;
-- retry with retry-safety metadata;
-- fallback;
-- reusable subflows;
-- resource arbitration;
-- preconditions and postconditions;
-- execution timeline and replay metadata;
-- deterministic schema migration tooling.
-
-Each new primitive requires written semantics and state-machine tests before editor work begins.
-
-## v1.0 — Stable core contracts
-
-A 1.0 release means the following are intentionally stable and have a published compatibility policy:
-
-- Workflow IR;
-- project file format;
-- capability manifest and profile contracts;
-- adapter/invocation lifecycle;
-- runtime result and event protocols;
-- migration and deprecation rules.
-
-## Non-goals for v0.x core
-
-Do not add these merely because they are common in general workflow products:
-
-- authentication or user accounts;
-- database/Redis infrastructure;
-- cloud synchronization or collaboration;
-- scheduler/cron;
-- arbitrary Python, JavaScript, or shell execution;
-- plugin marketplace;
-- fleet orchestration;
-- pause/resume;
-- automatic retries;
-- full Behavior Tree compatibility;
-- LLM authoring;
-- durable restart/reconciliation;
-- Rust runtime rewrite.
-
-## Engineering quality gates
-
-Every milestone must retain:
-
-- contract/schema tests;
-- runtime state-machine tests;
-- cancellation and timeout tests;
-- adapter conformance tests;
-- deterministic mock scenarios;
-- cross-language compile/validation tests once the Web package exists;
-- formatting, linting, and type checking in the relevant language toolchains;
-- a small set of end-to-end browser/runtime tests;
-- simulator and hardware tests separated from always-on core CI.
+Every milestone retains contract/schema tests, runtime state-machine tests,
+cancellation and timeout coverage, adapter conformance, deterministic mock
+scenarios, relevant static checks, and the nearest integration proof for the
+behavior it introduces.

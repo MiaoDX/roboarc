@@ -2,7 +2,7 @@
 
 ## Current
 
-RoboArc is at the v0.1b visual authoring stage. The Python package, typed
+RoboArc has completed the v0.1c ROS 2 Action lifecycle proof. The Python package, typed
 contracts, generated schemas, asyncio runtime, deterministic MockAdapter, CLI,
 FastAPI HTTP/WebSocket transport, and React/Blockly workbench are implemented.
 Blockly remains editor state; compiled Workflow IR remains the executable
@@ -13,12 +13,17 @@ manifest-driven arguments, project download/upload, local and backend
 validation, run/stop controls, stable block highlighting, progress, logs,
 errors, duration, terminal results, and WebSocket reconnect/replay.
 
+The optional ROS 2 Jazzy harness proves that unchanged Workflow IR and runtime
+contracts drive a genuine Action with native feedback, success, abort,
+rejection, unavailable-server and transport failures, cancellation, timeout,
+and incomplete-cancellation behavior. ROS remains outside the core package.
+
 ## Verification
 
 The required local checks pass:
 
 ```text
-28 Python tests passed; 23 Web unit tests passed; 7 Chromium browser workflows
+28 core Python tests passed; 8 ROS Jazzy integration tests passed; 23 Web unit tests passed; 7 Chromium browser workflows
 passed, including success, failure, progress, timeout, supported cancellation,
 incomplete cancellation, and 320/375/414/768px overflow checks.
 ruff check .
@@ -32,9 +37,8 @@ high-severity dependency audit.
 
 ## Next
 
-The next planned slice is a thin ROS 2 Action adapter spike to prove native
-feedback, results, cancellation, and timeout cleanup before TIAGo simulation
-work.
+The next planned milestone is a narrow TIAGo simulation integration, using the
+v0.1c lifecycle evidence before introducing robot-specific capabilities.
 
 ## Deferred
 

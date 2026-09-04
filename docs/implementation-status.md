@@ -1,6 +1,6 @@
 # Implementation Status
 
-## Completed through v0.1b
+## Completed through v0.1c
 
 ### Contracts
 
@@ -59,6 +59,15 @@ GitHub Actions runs the Python suite on 3.11, 3.12, and 3.13. The Web job runs
 Prettier, ESLint, TypeScript, 23 unit tests, schema drift checks, a production
 build, seven Chromium workflows, and the dependency audit.
 
+### ROS 2 Action lifecycle proof
+
+A repository-local ROS 2 Jazzy harness uses `example_interfaces/action/Fibonacci`
+to prove real Action dispatch, native progress, validated output, abort,
+rejection, unavailable-server and transport failures, accepted cancellation,
+terminal cancellation, bounded timeout cleanup, and incomplete cancellation.
+The harness and its dedicated CI workflow are optional; core package metadata
+and always-on Python/Web checks remain ROS-free.
+
 ## Deliberately not implemented
 
 - `if`, general expressions, variables, and output references;
@@ -68,20 +77,12 @@ build, seven Chromium workflows, and the dependency audit.
 - persistent or restartable runs;
 - authentication, multi-user authorization, databases, or cloud services;
 - arbitrary code execution;
-- ROS 2, TIAGo, Reachy 2, simulator, or hardware adapters.
+- production ROS 2, TIAGo, Reachy 2, simulator, or hardware adapters.
 
 ## Recommended continuation
 
-### Thin ROS 2 Action spike
-
-Before installing the full TIAGo stack, implement a small ROS 2 Action test server and adapter. It should prove:
-
-- goal dispatch and native feedback translation;
-- exact terminal result mapping;
-- cancel request versus cancel completion;
-- timeout cleanup;
-- no ROS imports in `roboarc.contracts` or `roboarc.runtime`.
-
 ### TIAGo integration
 
-Only after the thin Action spike passes should the adapter target TIAGo navigation/head behavior. Keep simulator tests outside the always-on core CI suite.
+The completed Action proof permits the next adapter to target TIAGo
+navigation/head behavior. Keep simulator tests outside the always-on core CI
+suite.
