@@ -1,0 +1,15 @@
+{
+  "workflow_schema_version": 1,
+  "id": "tiago-reception-greeting",
+  "name": "Reception greeting",
+  "profile_id": "tiago-sim",
+  "workflow": {
+    "id": "root",
+    "type": "sequence",
+    "children": [
+      {"id": "go-reception", "type": "capability", "capability": {"id": "navigation.goto_location", "version": 1}, "args": {"target": "reception"}},
+      {"id": "look-ahead", "type": "capability", "capability": {"id": "head.look_at", "version": 1}, "args": {"frame": "base_footprint", "x": 1.5, "y": 0.0, "z": 1.6}},
+      {"id": "greet", "type": "capability", "capability": {"id": "speech.say", "version": 1}, "args": {"text": "Welcome to RoboArc."}}
+    ]
+  }
+}

@@ -12,8 +12,9 @@ RoboArc composes product-level robot capabilities instead of exposing ROS topics
 
 ## Current status
 
-The repository has completed the **v0.2a observable simulation loop**, including
-the separate TIAGo ROS 2 Jazzy/Gazebo Harmonic proof lane. It contains:
+The repository has completed the **v0.3 portability proof**, including the
+observable simulation loop, the separate TIAGo ROS 2 Jazzy/Gazebo Harmonic proof
+lane, and a self-built Reachy 2 SDK/MuJoCo proof lane. It contains:
 
 - strict, versioned Pydantic contracts for Workflow IR, project files, capability manifests, robot profiles, validation reports, execution results, and runtime events;
 - checked-in JSON Schemas generated from those contracts;
@@ -21,7 +22,7 @@ the separate TIAGo ROS 2 Jazzy/Gazebo Harmonic proof lane. It contains:
 - a Python `asyncio` runtime with deterministic validation, ordered event history, deadlines, cooperative cancellation, and truthful cancellation failure reporting;
 - a deterministic `MockAdapter` covering success, staged progress, percentage progress, failure, cancellable work, and uncancellable work;
 - a FastAPI service for discovery, validation, run control, event replay, and live WebSocket events;
-- a React/TypeScript/Vite workbench with embedded Blockly authoring, manifest-driven arguments, project save/load, validation, run controls, and runtime telemetry;
+- a React/TypeScript/Vite workbench with embedded Blockly authoring, semantic Reachy/TIAGo action blocks, manifest-driven compatibility fallback, project save/load, validation, run controls, and runtime telemetry;
 - backend-neutral pose, trajectory, action-state, and progress observations
   exported as JSONL and optional native Rerun recordings;
 - a deterministic simulation adapter and observable workflow that require no
@@ -31,6 +32,9 @@ the separate TIAGo ROS 2 Jazzy/Gazebo Harmonic proof lane. It contains:
   Workflow IR through the runtime and a genuine ROS Action; and
 - a pinned TIAGo Jazzy/Gazebo Harmonic overlay and four-capability manual lane
   that runs the same observation contract against a live simulator stack.
+- a minimal self-built Reachy 2 MuJoCo lane with a succeeded visual proof
+  artifact; validate review artifacts with
+  `python scripts/validate_review_artifacts.py <artifact-dir>`.
 
 The ROS and TIAGo lanes remain outside the core package and always-on CI. They
 are integration proofs, not supported production robot adapters.
@@ -174,6 +178,7 @@ web/e2e/                 Browser workflow and responsive-layout tests
 - [Implementation status and handoff](docs/implementation-status.md)
 - [Demo strategy](docs/demo-strategy.md)
 - [Development plan](docs/development-plan.md)
+- [Community task composition plan](docs/plans/community-task-composition.md)
 - [Architecture review](docs/research/deep-review.md)
 - [Ecosystem landscape](docs/research/ecosystem-landscape.md)
 

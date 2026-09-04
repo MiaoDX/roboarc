@@ -10,6 +10,17 @@ import {
 } from "./blocks";
 import type { ProjectDocument, WorkflowDocument, WorkflowNode } from "./domain";
 import { validateProject } from "./validation";
+import {
+  isReachyActionArgs,
+  REACHY_ACTIONS,
+  type ReachyActionId,
+} from "./reachy-actions";
+import {
+  isExactArgs,
+  tiagoLocation,
+  tiagoLookPreset,
+  TIAGO_LOOK_PRESETS,
+} from "./tiago-actions";
 
 const NODE_ID_PREFIX = "block_";
 
@@ -84,6 +95,56 @@ function compileBlock(block: Blockly.Block): WorkflowNode {
       duration_ms: Number(block.getFieldValue("DURATION") ?? 0),
     };
   }
+  if (block.type === "robo_action") {
+    const action = String(block.getFieldValue("ACTION")) as ReachyActionId;
+    if (!REACHY_ACTIONS.some((item) => item.id === action))
+      throw new WorkflowDraftError("Unknown Reachy action.");
+    const side = String(block.getFieldValue("SIDE")) as "left" | "right";
+    const duration_ms = Number(block.getFieldValue("DURATION") ?? 1000);
+    return {
+      type: "capability",
+      id,
+      capability: { id: "reachy.arm.gesture", version: 1 },
+      args: { gesture: action, side, duration_ms },
+    };
+  }
+  if (block.type === "tiago_goto_location") {
+    const target = String(block.getFieldValue("LOCATION") ?? "");
+    if (!tiagoLocation(target))
+      throw new WorkflowDraftError("Unknown TIAGo map location.");
+    return {
+      type: "capability",
+      id,
+      capability: { id: "navigation.goto_location", version: 1 },
+      args: { target },
+    };
+  }
+  if (block.type === "tiago_look_at") {
+    const preset = tiagoLookPreset(String(block.getFieldValue("TARGET")));
+    if (!preset) throw new WorkflowDraftError("Unknown TIAGo look target.");
+    return {
+      type: "capability",
+      id,
+      capability: { id: "head.look_at", version: 1 },
+      args: { ...preset.args },
+    };
+  }
+  if (block.type === "tiago_say") {
+    return {
+      type: "capability",
+      id,
+      capability: { id: "speech.say", version: 1 },
+      args: { text: String(block.getFieldValue("TEXT") ?? "") },
+    };
+  }
+  if (block.type === "tiago_stop_navigation") {
+    return {
+      type: "capability",
+      id,
+      capability: { id: "navigation.stop", version: 1 },
+      args: {},
+    };
+  }
   if (block.type === "robo_capability") {
     return {
       type: "capability",
@@ -145,15 +206,55 @@ export function loadProject(
 export function loadWorkflow(
   workflow: WorkflowDocument,
   workspace: Blockly.Workspace,
+  profileId?: string,
 ): void {
   workspace.clear();
   const build = (node: WorkflowNode): Blockly.Block => {
+    const isReachyAction =
+      node.type === "capability" &&
+      node.capability.id === "reachy.arm.gesture" &&
+      node.capability.version === 1 &&
+      isReachyActionArgs(node.args);
+    const tiagoType = (() => {
+      if (
+        profileId !== "tiago-sim" ||
+        node.type !== "capability" ||
+        node.capability.version !== 1
+      )
+        return null;
+      if (
+        node.capability.id === "navigation.goto_location" &&
+        typeof node.args.target === "string" &&
+        tiagoLocation(node.args.target) &&
+        isExactArgs(node.args, { target: node.args.target })
+      )
+        return "tiago_goto_location";
+      if (
+        node.capability.id === "head.look_at" &&
+        TIAGO_LOOK_PRESETS.some((preset) => isExactArgs(node.args, preset.args))
+      )
+        return "tiago_look_at";
+      if (
+        node.capability.id === "speech.say" &&
+        typeof node.args.text === "string" &&
+        isExactArgs(node.args, { text: node.args.text })
+      )
+        return "tiago_say";
+      if (
+        node.capability.id === "navigation.stop" &&
+        isExactArgs(node.args, {})
+      )
+        return "tiago_stop_navigation";
+      return null;
+    })();
     const block = workspace.newBlock(
       node.type === "sequence"
         ? "robo_sequence"
         : node.type === "wait"
           ? "robo_wait"
-          : "robo_capability",
+          : isReachyAction
+            ? "robo_action"
+            : (tiagoType ?? "robo_capability"),
       blockIdForNodeId(node.id) ?? undefined,
     );
     setWorkflowNodeId(block, node.id);
@@ -181,8 +282,35 @@ export function loadWorkflow(
     } else if (node.type === "wait")
       block.setFieldValue(String(node.duration_ms), "DURATION");
     else {
-      setCapabilityReference(block, node.capability);
-      setCapabilityArguments(block, node.args);
+      if (block.type === "robo_action" && isReachyActionArgs(node.args)) {
+        const gestureValue = node.args.gesture;
+        const gesture =
+          typeof gestureValue === "string" &&
+          REACHY_ACTIONS.some((item) => item.id === gestureValue)
+            ? gestureValue
+            : "home";
+        block.setFieldValue(gesture, "ACTION");
+        block.setFieldValue(node.args.side, "SIDE");
+        block.setFieldValue(String(node.args.duration_ms), "DURATION");
+      } else if (block.type === "tiago_goto_location") {
+        block.setFieldValue(
+          typeof node.args.target === "string" ? node.args.target : "home",
+          "LOCATION",
+        );
+      } else if (block.type === "tiago_look_at") {
+        const preset = TIAGO_LOOK_PRESETS.find((item) =>
+          isExactArgs(node.args, item.args),
+        );
+        block.setFieldValue(preset?.id ?? TIAGO_LOOK_PRESETS[0].id, "TARGET");
+      } else if (block.type === "tiago_say") {
+        block.setFieldValue(
+          typeof node.args.text === "string" ? node.args.text : "",
+          "TEXT",
+        );
+      } else if (block.type !== "tiago_stop_navigation") {
+        setCapabilityReference(block, node.capability);
+        setCapabilityArguments(block, node.args);
+      }
     }
     if (block instanceof Blockly.BlockSvg) block.render();
     return block;

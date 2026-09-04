@@ -5,3 +5,8 @@
   border: 1px solid var(--color-rule);
   background: var(--color-workspace);
 }
+
+.blockly-review .blocklyHighlighted > .blocklyPath {
+  stroke: #f59e0b;
+  stroke-width: 4px;
+}

@@ -51,4 +51,57 @@ describe("capability toolbox", () => {
       true,
     );
   });
+
+  it("adds semantic Reachy actions when the arm pose contract is available", () => {
+    const toolbox = toolboxFromManifests([
+      manifest("reachy.arm.gesture", 1, "Reachy actions"),
+    ]);
+    expect(toolbox.contents.map((category) => category.name)).toEqual([
+      "Workflow",
+      "Reachy actions",
+    ]);
+    expect(toolbox.contents.at(-1)).toMatchObject({ name: "Reachy actions" });
+  });
+
+  it("uses semantic TIAGo blocks and hides their generic capability entries", () => {
+    const toolbox = toolboxFromManifests(
+      [
+        manifest("navigation.goto_location", 1, "Navigation"),
+        manifest("navigation.stop", 1, "Navigation"),
+        manifest("head.look_at", 1, "Head"),
+        manifest("speech.say", 1, "Speech"),
+      ],
+      "tiago-sim",
+    );
+
+    expect(toolbox.contents.map((category) => category.name)).toEqual([
+      "Workflow",
+      "TIAGo actions",
+    ]);
+    expect(
+      toolbox.contents.at(-1)?.contents.map((block) => block.type),
+    ).toEqual([
+      "tiago_goto_location",
+      "tiago_look_at",
+      "tiago_say",
+      "tiago_stop_navigation",
+    ]);
+    expect(JSON.stringify(toolbox)).not.toContain("robo_capability");
+  });
+
+  it("does not apply TIAGo presets to shared capabilities on other profiles", () => {
+    const toolbox = toolboxFromManifests(
+      [manifest("speech.say", 1, "Speech")],
+      "another-robot",
+    );
+
+    expect(toolbox.contents.map((category) => category.name)).toEqual([
+      "Workflow",
+      "Speech",
+    ]);
+    expect(toolbox.contents[1].contents[0]).toMatchObject({
+      type: "robo_capability",
+      fields: { CAPABILITY: "speech.say@1" },
+    });
+  });
 });

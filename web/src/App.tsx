@@ -52,6 +52,8 @@ import {
   WorkflowDraftError,
 } from "./compiler";
 import { toolboxFromManifests } from "./domain";
+import { reachyAction, REACHY_ACTIONS } from "./reachy-actions";
+import { tiagoLookPreset } from "./tiago-actions";
 import { createRoboArcTheme } from "./blockly-theme";
 import type {
   CapabilityManifest,
@@ -367,6 +369,60 @@ function Inspector({
       </section>
     );
   }
+  if (block.type === "robo_action") {
+    const action = String(block.getFieldValue("ACTION"));
+    const metadata = REACHY_ACTIONS.find((item) => item.id === action);
+    return (
+      <section className="inspector-content">
+        <div className="panel-kicker">Reachy action</div>
+        <h2>{metadata?.label ?? reachyAction("home").label}</h2>
+        <p>Semantic motion preset compiled to the Reachy arm pose contract.</p>
+        <div className="metadata">
+          <span>{String(block.getFieldValue("SIDE"))} arm</span>
+          <span>{String(block.getFieldValue("DURATION"))} ms</span>
+        </div>
+      </section>
+    );
+  }
+  if (block.type === "tiago_goto_location") {
+    return (
+      <section className="inspector-content">
+        <div className="panel-kicker">TIAGo action</div>
+        <h2>Go to</h2>
+        <p>{String(block.getFieldValue("LOCATION"))}</p>
+      </section>
+    );
+  }
+  if (block.type === "tiago_look_at") {
+    return (
+      <section className="inspector-content">
+        <div className="panel-kicker">TIAGo action</div>
+        <h2>Look</h2>
+        <p>
+          {tiagoLookPreset(String(block.getFieldValue("TARGET")))?.label ??
+            "target"}
+        </p>
+      </section>
+    );
+  }
+  if (block.type === "tiago_say") {
+    return (
+      <section className="inspector-content">
+        <div className="panel-kicker">TIAGo action</div>
+        <h2>Say</h2>
+        <p>{String(block.getFieldValue("TEXT"))}</p>
+      </section>
+    );
+  }
+  if (block.type === "tiago_stop_navigation") {
+    return (
+      <section className="inspector-content">
+        <div className="panel-kicker">TIAGo control</div>
+        <h2>Stop navigation</h2>
+        <p>Navigation control action.</p>
+      </section>
+    );
+  }
   if (block.type !== "robo_capability") return null;
   let reference;
   try {
@@ -654,6 +710,7 @@ export default function App() {
     const workspace = Blockly.inject(workspaceHost.current, {
       toolbox: toolboxFromManifests(
         manifests,
+        profile?.id,
       ) as Blockly.utils.toolbox.ToolboxDefinition,
       renderer: "zelos",
       trashcan: true,

@@ -3,11 +3,13 @@ set -euo pipefail
 
 image="roboarc-tiago-jazzy:repro"
 output="artifacts/tiago-proof-final/gazebo-review.mp4"
+workflow="examples/workflows/tiago-reception-greeting.json"
 render_mode="gpu"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --image) image="$2"; shift 2;;
     --output) output="$2"; shift 2;;
+    --workflow) workflow="$2"; shift 2;;
     --software) render_mode="software"; shift;;
     *) echo "usage: $0 [--image IMAGE] [--output PATH] [--software]" >&2; exit 2;;
   esac
@@ -17,6 +19,7 @@ command -v gst-launch-1.0 >/dev/null || { echo "GStreamer is required" >&2; exit
 command -v xdotool >/dev/null || { echo "xdotool is required" >&2; exit 2; }
 mkdir -p "$(dirname "$output")"
 artifact_dir="$(cd "$(dirname "$output")" && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 output="${artifact_dir}/$(basename "$output")"
 start_gate="${artifact_dir}/.gazebo-review-start"
 ready_gate="${artifact_dir}/.gazebo-review-ready"
@@ -40,7 +43,8 @@ docker run "${docker_args[@]}" "${render_env[@]}" -e DISPLAY="$display" \
   -e QT_X11_NO_MITSHM=1 \
   -e XDG_RUNTIME_DIR=/tmp/xdg-runtime \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v "${artifact_dir}:/artifacts" "$image" \
+  -v "${artifact_dir}:/artifacts" \
+  -v "${repo_root}:/workspace:ro" "$image" \
   env ROBOARC_GZCLIENT=True ROBOARC_TRACE=/artifacts/tiago-observable.jsonl \
   ROBOARC_RERUN=/artifacts/tiago-observable.rrd \
   ROBOARC_MANIFEST=/artifacts/review.json \
@@ -48,6 +52,7 @@ docker run "${docker_args[@]}" "${render_env[@]}" -e DISPLAY="$display" \
   ROBOARC_READY_GATE=/artifacts/.gazebo-review-ready \
   ROBOARC_START_GATE=/artifacts/.gazebo-review-start \
   ROBOARC_END_GATE=/artifacts/.gazebo-review-end \
+  ROBOARC_WORKFLOW="/workspace/${workflow}" \
   docker/tiago-jazzy/run-proof.sh &
 docker_pid=$!
 cleanup() {

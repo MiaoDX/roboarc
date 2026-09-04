@@ -53,8 +53,12 @@ async def run(
                 "observation_count": len(events),
                 "provenance": {
                     "image": "roboarc-reachy2-proof",
-                    "image_digest": "sha256:01666d05c7a002e0daf15c7dc8d0da91a31844bf75194c2cfe7ff88c5fbfd925",
-                    "base_image": "python:3.11-slim@sha256:9534e5a8e315485d4061ed659af0fd78a284c015f9b73661b41d6bab25604534",
+                    "image_digest": (
+                        "sha256:b6cf0b7ddc5c16ef018203949985a75f8899619cb9f9e8c9300b2516093a908f"
+                    ),
+                    "base_image": (
+                        "python:3.11-slim@sha256:9534e5a8e315485d4061ed659af0fd78a284c015f9b73661b41d6bab25604534"
+                    ),
                     "platform": "linux/amd64",
                     "reachy2_mujoco_commit": "f6d8284e812d3b96b557e2e844d55bd09d6e3ee6",
                     "reachy2_symbolic_ik_commit": "31e6a2375f83d09e19af16dadb7f70bb96fbbd65",
@@ -65,10 +69,12 @@ async def run(
                 },
                 "media": {
                     "codec": "h264",
-                    "width": 852,
-                    "height": 480,
+                    "width": 1280,
+                    "height": 720,
                     "fps": 30,
-                    "duration_seconds": 5.633333,
+                    "duration_seconds": round(
+                        (result.finished_at - result.started_at).total_seconds(), 6
+                    ),
                 },
                 "artifacts": {
                     "trace": trace_output.name,

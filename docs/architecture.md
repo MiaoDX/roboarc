@@ -146,14 +146,10 @@ It does not claim “write once, run everywhere.”
 
 ## Future extensions
 
-The architecture leaves room for, but does not require in the current core:
-
-- alternative graph-oriented and AI-assisted authoring surfaces;
-- typed values, references, conditions, and bounded loops;
-- `parallel_all`, resource arbitration, and pre/postconditions;
-- reusable subflows;
-- retry/fallback with side-effect and retry-safety semantics;
-- durable execution and state reconciliation;
-- timeline, replay, and provenance;
-- natural-language proposals compiled to validated Workflow IR and visually reviewed;
-- a hardened Rust edge runtime if deployment requirements justify it.
+The next product bet is the TIAGo-first Community Task Composition Slice,
+defined in
+[`docs/plans/community-task-composition.md`](plans/community-task-composition.md).
+It intentionally uses the current IR and UI. Any later IR, execution, or
+authoring extension must be triggered by a concrete workflow failure and get
+its own scope and semantic proof; no larger feature family is currently
+committed.

@@ -21,17 +21,73 @@ import {
   workflowSteps,
 } from "./review";
 import type { ReviewManifest } from "./review";
+import { isReachyActionArgs, REACHY_ACTIONS } from "./reachy-actions";
+import {
+  isExactArgs,
+  tiagoLocation,
+  TIAGO_LOOK_PRESETS,
+} from "./tiago-actions";
 import "./review.css";
 import "./review-blockly.css";
 
 const artifactRoot = "/artifacts";
 
-function nodeSummary(node: WorkflowNode): { label: string; detail: string } {
-  if (node.type === "capability")
+export function nodeSummary(
+  node: WorkflowNode,
+  profileId?: string,
+): {
+  label: string;
+  detail: string;
+} {
+  if (node.type === "capability") {
+    const reachyArgs =
+      node.capability.id === "reachy.arm.gesture" &&
+      isReachyActionArgs(node.args)
+        ? node.args
+        : null;
+    const action = reachyArgs
+      ? REACHY_ACTIONS.find((candidate) => candidate.id === reachyArgs.gesture)
+      : undefined;
+    if (action && reachyArgs) {
+      return {
+        label: action.label,
+        detail: `${reachyArgs.side} arm · ${String(reachyArgs.duration_ms)} ms`,
+      };
+    }
+    if (profileId === "tiago-sim" && node.capability.version === 1) {
+      if (
+        node.capability.id === "navigation.goto_location" &&
+        typeof node.args.target === "string" &&
+        tiagoLocation(node.args.target) &&
+        isExactArgs(node.args, { target: node.args.target })
+      )
+        return { label: "Go to", detail: node.args.target };
+      if (node.capability.id === "head.look_at") {
+        const preset = TIAGO_LOOK_PRESETS.find((item) =>
+          isExactArgs(node.args, item.args),
+        );
+        if (preset) return { label: "Look", detail: preset.label };
+      }
+      if (
+        node.capability.id === "speech.say" &&
+        typeof node.args.text === "string" &&
+        isExactArgs(node.args, { text: node.args.text })
+      )
+        return { label: "Say", detail: node.args.text };
+      if (
+        node.capability.id === "navigation.stop" &&
+        isExactArgs(node.args, {})
+      )
+        return {
+          label: "Stop navigation",
+          detail: "navigation control action",
+        };
+    }
     return {
       label: `${node.capability.id}@${String(node.capability.version)}`,
       detail: JSON.stringify(node.args),
     };
+  }
   if (node.type === "wait")
     return { label: "wait", detail: `${String(node.duration_ms)} ms` };
   return {
@@ -49,6 +105,8 @@ export default function ReviewApp() {
   const [intervals, setIntervals] = React.useState<
     ReturnType<typeof nodeIntervals>
   >([]);
+  const [activeNodeId, setActiveNodeId] = React.useState<string | null>(null);
+  const [videoDimensions, setVideoDimensions] = React.useState<string>("H.264");
 
   React.useEffect(() => {
     fetch(`${artifactRoot}/review.json`, { cache: "no-store" })
@@ -111,7 +169,7 @@ export default function ReviewApp() {
       grid: { spacing: 24, length: 2, colour: "#d9e1e8" },
       theme: createRoboArcTheme(),
     });
-    loadWorkflow(manifest.workflow, workspace);
+    loadWorkflow(manifest.workflow, workspace, manifest.profile_id);
     workspaceRef.current = workspace;
     workspace.zoomToFit();
     return () => {
@@ -132,6 +190,7 @@ export default function ReviewApp() {
         video.currentTime * 1000 -
         Date.parse(manifest.result.started_at);
       const nodeId = activeNodeAt(intervals, elapsed);
+      setActiveNodeId(nodeId);
       workspaceRef.current?.highlightBlock(
         nodeId
           ? (blockForNodeId(workspaceRef.current, nodeId)?.id ?? null)
@@ -141,10 +200,21 @@ export default function ReviewApp() {
     video.addEventListener("timeupdate", update);
     video.addEventListener("seeked", update);
     video.addEventListener("loadedmetadata", update);
+    const updateDimensions = () => {
+      setVideoDimensions(
+        video.videoWidth && video.videoHeight
+          ? `H.264 · ${String(video.videoWidth)} × ${String(video.videoHeight)}`
+          : "H.264",
+      );
+    };
+    video.addEventListener("loadedmetadata", updateDimensions);
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) updateDimensions();
+    update();
     return () => {
       video.removeEventListener("timeupdate", update);
       video.removeEventListener("seeked", update);
       video.removeEventListener("loadedmetadata", update);
+      video.removeEventListener("loadedmetadata", updateDimensions);
     };
   }, [manifest, intervals]);
 
@@ -206,7 +276,7 @@ export default function ReviewApp() {
           <div className="blockly-review" ref={blockHost} />
           <div className="step-list">
             {steps.map(({ node, depth }, index) => {
-              const summary = nodeSummary(node);
+              const summary = nodeSummary(node, manifest.profile_id);
               const NodeIcon =
                 node.type === "wait"
                   ? Clock3
@@ -215,14 +285,19 @@ export default function ReviewApp() {
                     : CheckCircle2;
               return (
                 <article
-                  className="workflow-step"
+                  className={`workflow-step${activeNodeId === node.id ? " is-active" : ""}`}
                   key={node.id}
                   style={{ paddingLeft: `${String(depth * 18)}px` }}
                 >
                   <div className="step-index">{index + 1}</div>
                   <NodeIcon size={19} className="step-icon" />
                   <div>
-                    <h3>{node.id}</h3>
+                    <h3>
+                      {node.id}
+                      {activeNodeId === node.id && (
+                        <span className="playing-badge">Playing</span>
+                      )}
+                    </h3>
                     <code>{summary.label}</code>
                     <p>{summary.detail}</p>
                   </div>
@@ -238,7 +313,7 @@ export default function ReviewApp() {
                 <span className="review-kicker">Simulation recording</span>
                 <h2>Recorded execution</h2>
               </div>
-              <span className="video-meta">H.264 · 1600 × 900</span>
+              <span className="video-meta">{videoDimensions}</span>
             </div>
             <video
               ref={videoRef}

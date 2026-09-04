@@ -1,6 +1,7 @@
 import * as Blockly from "blockly/core";
 
 import type { CapabilityRef, JsonValue } from "./domain";
+import { TIAGO_LOCATIONS, TIAGO_LOOK_PRESETS } from "./tiago-actions";
 
 interface CapabilityBlockData {
   capabilityArguments?: Record<string, JsonValue>;
@@ -152,6 +153,41 @@ export function registerBlocks(): void {
         style: "roboarc_workflow_blocks",
       },
       {
+        type: "robo_action",
+        message0: "%1 · %2 arm · %3 ms",
+        args0: [
+          {
+            type: "field_dropdown",
+            name: "ACTION",
+            options: [
+              ["Return arm home", "home"],
+              ["Raise arm", "raise"],
+              ["Wave arm", "wave"],
+              ["Present with arm", "present"],
+            ],
+          },
+          {
+            type: "field_dropdown",
+            name: "SIDE",
+            options: [
+              ["left", "left"],
+              ["right", "right"],
+            ],
+          },
+          {
+            type: "field_number",
+            name: "DURATION",
+            value: 6000,
+            min: 0,
+            max: 10000,
+            precision: 50,
+          },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        style: "roboarc_capability_blocks",
+      },
+      {
         type: "robo_capability",
         message0: "capability %1",
         args0: [
@@ -161,6 +197,55 @@ export function registerBlocks(): void {
             text: "example@1",
           },
         ],
+        previousStatement: null,
+        nextStatement: null,
+        style: "roboarc_capability_blocks",
+      },
+      {
+        type: "tiago_goto_location",
+        message0: "Go to %1",
+        args0: [
+          {
+            type: "field_dropdown",
+            name: "LOCATION",
+            options: TIAGO_LOCATIONS.map((location) => [
+              location.label,
+              location.id,
+            ]),
+          },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        style: "roboarc_capability_blocks",
+      },
+      {
+        type: "tiago_look_at",
+        message0: "Look %1",
+        args0: [
+          {
+            type: "field_dropdown",
+            name: "TARGET",
+            options: TIAGO_LOOK_PRESETS.map((preset) => [
+              preset.label,
+              preset.id,
+            ]),
+          },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        style: "roboarc_capability_blocks",
+      },
+      {
+        type: "tiago_say",
+        message0: "Say %1",
+        args0: [{ type: "field_input", name: "TEXT", text: "Hello" }],
+        previousStatement: null,
+        nextStatement: null,
+        style: "roboarc_capability_blocks",
+      },
+      {
+        type: "tiago_stop_navigation",
+        message0: "Stop navigation",
         previousStatement: null,
         nextStatement: null,
         style: "roboarc_capability_blocks",

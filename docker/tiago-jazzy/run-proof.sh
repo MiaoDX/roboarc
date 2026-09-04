@@ -20,6 +20,7 @@ trace="${ROBOARC_TRACE:-/artifacts/tiago-observable.jsonl}"
 rerun="${ROBOARC_RERUN:-/artifacts/tiago-observable.rrd}"
 manifest="${ROBOARC_MANIFEST:-/artifacts/review.json}"
 video="${ROBOARC_VIDEO:-gazebo-review.mp4}"
+workflow="${ROBOARC_WORKFLOW:-examples/workflows/tiago-observable.json}"
 video_origin="${ROBOARC_VIDEO_ORIGIN:-}"
 start_gate="${ROBOARC_START_GATE:-}"
 ready_gate="${ROBOARC_READY_GATE:-}"
@@ -83,7 +84,7 @@ if [[ -n "${start_gate}" ]]; then
 fi
 
 python -m tests.tiago.run_manual \
-  --workflow examples/workflows/tiago-observable.json \
+  --workflow "${workflow}" \
   --trace "${trace}" \
   --rerun "${rerun}" \
   --manifest "${manifest}" \

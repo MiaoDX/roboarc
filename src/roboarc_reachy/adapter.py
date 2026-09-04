@@ -20,7 +20,24 @@ from roboarc.runtime.adapter import CancellationDisposition, CapabilityAdapter, 
 from roboarc.runtime.context import ExecutionContext
 
 from .fake_sdk import FakeReachy
-from .profile import ARM_POSE_JOINTS, JOINT_FIELDS, REACHY_MANIFESTS, REACHY_PROFILE
+from .profile import ARM_GESTURE, REACHY_MANIFESTS, REACHY_PROFILE
+
+GESTURE_POSES = {
+    "home": ((0.0, -10.0, 10.0, 0.0, 0.0, 0.0, 0.0),),
+    "raise": ((0.0, 40.0, 0.0, -90.0, 0.0, 0.0, 0.0),),
+    "wave": (
+        (0.0, 40.0, 0.0, -90.0, 0.0, 0.0, 0.0),
+        (0.0, 40.0, 25.0, -105.0, 0.0, -10.0, -25.0),
+        (0.0, 40.0, 40.0, -115.0, 0.0, 10.0, 25.0),
+        (0.0, 40.0, 25.0, -105.0, 0.0, -10.0, -25.0),
+        (0.0, 40.0, 40.0, -115.0, 0.0, 10.0, 25.0),
+        (0.0, 40.0, 0.0, -90.0, 0.0, 0.0, 0.0),
+    ),
+    "present": ((30.0, 35.0, -20.0, -55.0, 0.0, -20.0, 0.0),),
+}
+
+CONTROL_INTERVAL_MS = 33
+MOTION_FRACTION = 0.75
 
 
 class ReachyArm(Protocol):
@@ -66,27 +83,42 @@ class ReachyAdapter(CapabilityAdapter):
     async def invoke(
         self, capability: CapabilityRef, args: dict[str, object], context: ExecutionContext
     ) -> CapabilityInvocation:
-        if capability != ARM_POSE_JOINTS.ref:
+        if capability != ARM_GESTURE.ref:
             raise KeyError(f"unsupported Reachy capability: {capability.id}@{capability.version}")
         try:
+            gesture = cast(str, args["gesture"])
+            if gesture not in GESTURE_POSES:
+                raise ValueError(f"gesture must be one of {tuple(GESTURE_POSES)}")
             side = cast(str, args["side"])
             if side not in {"left", "right"}:
                 raise ValueError("side must be 'left' or 'right'")
-            values = tuple(_number(args[field], field) for field in JOINT_FIELDS)
             duration_ms = args.get("duration_ms", 1000)
             if isinstance(duration_ms, bool) or not isinstance(duration_ms, int):
                 raise ValueError("duration_ms must be an integer")
-            if not 0 <= duration_ms <= 10_000:
-                raise ValueError("duration_ms must be between 0 and 10000")
+            if not 100 <= duration_ms <= 10_000:
+                raise ValueError("duration_ms must be between 100 and 10000")
         except (KeyError, ValueError) as error:
             return _Immediate(_failure(ErrorCode.VALIDATION_ERROR, str(error)))
-        return _Invocation(cast(ReachyClient, self.robot), side, values, duration_ms, context)
-
-
-def _number(value: object, field: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not -180 <= value <= 180:
-        raise ValueError(f"{field} must be a number between -180 and 180")
-    return float(value)
+        poses: tuple[tuple[float, ...], ...] = GESTURE_POSES[gesture]
+        if side == "right":
+            poses = cast(
+                tuple[tuple[float, ...], ...],
+                tuple(
+                    tuple(
+                        -value if index in {1, 2, 6} else value
+                        for index, value in enumerate(pose)
+                    )
+                    for pose in poses
+                ),
+            )
+        return _Invocation(
+            cast(ReachyClient, self.robot),
+            gesture,
+            side,
+            poses,
+            duration_ms,
+            context,
+        )
 
 
 def _failure(code: ErrorCode, message: str) -> CapabilityResult:
@@ -113,13 +145,17 @@ class _Invocation(CapabilityInvocation):
     def __init__(
         self,
         robot: ReachyClient,
+        gesture: str,
         side: str,
-        target: tuple[float, ...],
+        targets: tuple[tuple[float, ...], ...],
         duration_ms: int,
         context: ExecutionContext,
     ) -> None:
+        self._gesture = gesture
         self._side = side
-        self._task = asyncio.create_task(_move_arm(robot, side, target, duration_ms, context))
+        self._task = asyncio.create_task(
+            _move_gesture(robot, gesture, side, targets, duration_ms, context)
+        )
 
     async def result(self) -> CapabilityResult:
         try:
@@ -127,7 +163,8 @@ class _Invocation(CapabilityInvocation):
         except Exception as error:
             return _failure(ErrorCode.CAPABILITY_FAILED, str(error))
         return CapabilityResult(
-            status=ResultStatus.SUCCESS, output={"side": self._side, "completed": True}
+            status=ResultStatus.SUCCESS,
+            output={"gesture": self._gesture, "side": self._side, "completed": True},
         )
 
     async def request_cancel(self) -> CancellationDisposition:
@@ -143,25 +180,56 @@ async def _move_arm(
     target: tuple[float, ...],
     duration_ms: int,
     context: ExecutionContext,
+    progress_start: float = 0.0,
+    progress_end: float = 100.0,
 ) -> None:
     arm = robot.l_arm if side == "left" else robot.r_arm
     start = tuple(float(value) for value in await asyncio.to_thread(arm.get_present_positions))
     if len(start) != len(target):
         raise RuntimeError(f"Reachy SDK returned {len(start)} arm joints; expected {len(target)}")
-    steps = max(1, min(100, (duration_ms + 49) // 50))
+    steps = max(1, (duration_ms + CONTROL_INTERVAL_MS - 1) // CONTROL_INTERVAL_MS)
     interval = duration_ms / steps / 1000
+    loop = asyncio.get_running_loop()
+    started_at = loop.time()
     for step in range(1, steps + 1):
-        fraction = step / steps
-        position = tuple(a + (b - a) * fraction for a, b in zip(start, target, strict=True))
+        progress = step / steps
+        motion_progress = min(1.0, progress / MOTION_FRACTION)
+        eased = motion_progress**3 * (
+            10 - 15 * motion_progress + 6 * motion_progress**2
+        )
+        position = tuple(
+            a + (b - a) * eased for a, b in zip(start, target, strict=True)
+        )
         await asyncio.to_thread(arm.set_goal_positions, position)
         await asyncio.to_thread(robot.send_goal_positions)
         await context.report_progress(
             stage="posing",
-            percent=100 * fraction,
+            percent=progress_start + (progress_end - progress_start) * progress,
             source=ProgressSource.ESTIMATED,
             current=step,
             total=steps,
             unit="step",
         )
-        if step < steps and interval:
-            await asyncio.sleep(interval)
+        deadline = started_at + step * interval
+        await asyncio.sleep(max(0.0, deadline - loop.time()))
+
+
+async def _move_gesture(
+    robot: ReachyClient,
+    gesture: str,
+    side: str,
+    targets: tuple[tuple[float, ...], ...],
+    duration_ms: int,
+    context: ExecutionContext,
+) -> None:
+    segment_ms = max(1, duration_ms // len(targets))
+    for index, target in enumerate(targets):
+        await _move_arm(
+            robot,
+            side,
+            target,
+            segment_ms,
+            context,
+            100 * index / len(targets),
+            100 * (index + 1) / len(targets),
+        )

@@ -7,7 +7,6 @@ import pytest
 from roboarc.contracts import EventType, RunState, WorkflowDocument
 from roboarc.runtime import DeterministicSimulationAdapter, Runtime
 from roboarc_reachy import ReachyAdapter
-from roboarc_reachy.profile import JOINT_FIELDS
 
 
 def _workflow(profile_id: str, capability_id: str, args: dict[str, object]) -> WorkflowDocument:
@@ -43,11 +42,11 @@ async def test_profile_appropriate_workflows_preserve_runtime_invariants() -> No
             ReachyAdapter(),
             _workflow(
                 "reachy2-sim",
-                "reachy.arm.pose_joints",
+                "reachy.arm.gesture",
                 {
+                    "gesture": "raise",
                     "side": "left",
-                    **{field: 10.0 for field in JOINT_FIELDS},
-                    "duration_ms": 50,
+                    "duration_ms": 100,
                 },
             ),
         ),
