@@ -1,6 +1,13 @@
 import * as Blockly from "blockly/core";
 
-import { getCapabilityArguments, getCapabilityReference } from "./blocks";
+import {
+  getCapabilityArguments,
+  getCapabilityReference,
+  getWorkflowNodeId,
+  setCapabilityArguments,
+  setCapabilityReference,
+  setWorkflowNodeId,
+} from "./blocks";
 import type { ProjectDocument, WorkflowDocument, WorkflowNode } from "./domain";
 import { validateProject } from "./validation";
 
@@ -48,11 +55,16 @@ export function blockForNodeId(
   nodeId: string,
 ): Blockly.Block | null {
   const blockId = blockIdForNodeId(nodeId);
-  return blockId === null ? null : workspace.getBlockById(blockId);
+  if (blockId !== null) return workspace.getBlockById(blockId);
+  return (
+    workspace
+      .getAllBlocks(false)
+      .find((block) => getWorkflowNodeId(block) === nodeId) ?? null
+  );
 }
 
 function compileBlock(block: Blockly.Block): WorkflowNode {
-  const id = nodeIdForBlockId(block.id);
+  const id = getWorkflowNodeId(block) ?? nodeIdForBlockId(block.id);
   if (block.type === "robo_sequence") {
     const children: WorkflowNode[] = [];
     let child = block.getInputTargetBlock("CHILDREN");
@@ -128,4 +140,53 @@ export function loadProject(
     throw new Error("unsupported editor state");
   }
   Blockly.serialization.workspaces.load(validProject.editor.state, workspace);
+}
+
+export function loadWorkflow(
+  workflow: WorkflowDocument,
+  workspace: Blockly.Workspace,
+): void {
+  workspace.clear();
+  const build = (node: WorkflowNode): Blockly.Block => {
+    const block = workspace.newBlock(
+      node.type === "sequence"
+        ? "robo_sequence"
+        : node.type === "wait"
+          ? "robo_wait"
+          : "robo_capability",
+      blockIdForNodeId(node.id) ?? undefined,
+    );
+    setWorkflowNodeId(block, node.id);
+    if (block instanceof Blockly.BlockSvg) block.initSvg();
+    if (node.type === "sequence") {
+      let previous: Blockly.Block | null = null;
+      for (const child of node.children) {
+        const childBlock = build(child);
+        const childConnection = childBlock.previousConnection;
+        if (!childConnection)
+          throw new Error("Workflow child block cannot join a sequence");
+        if (previous) {
+          const nextConnection = previous.nextConnection;
+          if (!nextConnection)
+            throw new Error("Workflow child block cannot precede another node");
+          nextConnection.connect(childConnection);
+        } else {
+          const sequenceConnection = block.getInput("CHILDREN")?.connection;
+          if (!sequenceConnection)
+            throw new Error("Sequence block has no child connection");
+          sequenceConnection.connect(childConnection);
+        }
+        previous = childBlock;
+      }
+    } else if (node.type === "wait")
+      block.setFieldValue(String(node.duration_ms), "DURATION");
+    else {
+      setCapabilityReference(block, node.capability);
+      setCapabilityArguments(block, node.args);
+    }
+    if (block instanceof Blockly.BlockSvg) block.render();
+    return block;
+  };
+  const root = build(workflow.workflow);
+  if (root instanceof Blockly.BlockSvg) root.moveBy(64, 48);
 }

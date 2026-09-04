@@ -142,6 +142,167 @@ test("distinguishes supported and incomplete cancellation", async ({
   );
 });
 
+test("renders a canonical review manifest as Blockly", async ({ page }) => {
+  await page.route("**/artifacts/review.json", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        review_schema_version: 1,
+        workflow: {
+          workflow_schema_version: 1,
+          id: "review-demo",
+          name: "Stable review demo",
+          workflow: {
+            type: "sequence",
+            id: "root",
+            children: [
+              { type: "wait", id: "settle", duration_ms: 250 },
+              {
+                type: "capability",
+                id: "speak",
+                capability: { id: "speech.say", version: 1 },
+                args: { text: "hello" },
+              },
+            ],
+          },
+        },
+        result: {
+          run_id: "run-browser-review",
+          workflow_id: "review-demo",
+          state: "succeeded",
+          error: null,
+          started_at: "2026-09-01T00:00:00Z",
+          finished_at: "2026-09-01T00:00:01Z",
+        },
+        profile_id: "review-sim",
+        observation_count: 42,
+        artifacts: {
+          trace: "trace.jsonl",
+          rerun: null,
+          video: "review.mp4",
+        },
+        timeline: {
+          timebase: "utc",
+          media: [
+            {
+              id: "gazebo-camera",
+              artifact: "review.mp4",
+              origin: "2026-09-01T00:00:00Z",
+            },
+          ],
+        },
+      }),
+    });
+  });
+  await page.route("**/artifacts/trace.jsonl", async (route) => {
+    await route.fulfill({
+      contentType: "application/x-ndjson",
+      body: [
+        {
+          event_protocol_version: 1,
+          event_id: "00000000-0000-4000-8000-000000000001",
+          seq: 1,
+          run_id: "run-browser-review",
+          node_id: "settle",
+          type: "node.started",
+          occurred_at: "2026-09-01T00:00:00.100Z",
+          data: {},
+        },
+        {
+          event_protocol_version: 1,
+          event_id: "00000000-0000-4000-8000-000000000002",
+          seq: 2,
+          run_id: "run-browser-review",
+          node_id: "settle",
+          type: "node.finished",
+          occurred_at: "2026-09-01T00:00:00.900Z",
+          data: {},
+        },
+      ]
+        .map((event) => JSON.stringify(event))
+        .join("\n"),
+    });
+  });
+  await page.route("**/artifacts/review.mp4", async (route) => {
+    await route.fulfill({ contentType: "video/mp4", body: Buffer.from([]) });
+  });
+
+  await page.goto("/?review");
+
+  await expect(
+    page.getByRole("heading", { name: "Stable review demo" }),
+  ).toBeVisible();
+  await expect(page.getByText("run-browser-review")).toBeVisible();
+  await expect(page.locator(".blockly-review")).toContainText("speech.say@1");
+  await expect(page.locator(".step-list")).toContainText("250 ms");
+  await expect(page.getByRole("link", { name: "Rerun RRD" })).toHaveCount(0);
+  await page.evaluate(() => {
+    const video = document.querySelector(".video-panel video");
+    if (!(video instanceof HTMLVideoElement)) throw new Error("video missing");
+    Object.defineProperty(video, "currentTime", {
+      configurable: true,
+      value: 0.5,
+    });
+    video.dispatchEvent(new Event("timeupdate"));
+  });
+  await expect(page.locator(".blockly-review .blocklyHighlighted")).toHaveCount(
+    1,
+  );
+  await page.evaluate(() => {
+    const video = document.querySelector(".video-panel video");
+    if (!(video instanceof HTMLVideoElement)) throw new Error("video missing");
+    Object.defineProperty(video, "currentTime", {
+      configurable: true,
+      value: 1.0,
+    });
+    video.dispatchEvent(new Event("seeked"));
+  });
+  await expect(page.locator(".blockly-review .blocklyHighlighted")).toHaveCount(
+    0,
+  );
+
+  const blockColors = await page.evaluate(() => {
+    const tokenColor = (name: string) => {
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Canvas color conversion is unavailable");
+      context.fillStyle = getComputedStyle(document.documentElement)
+        .getPropertyValue(name)
+        .trim();
+      context.fillRect(0, 0, 1, 1);
+      const [red, green, blue] = context.getImageData(0, 0, 1, 1).data;
+      return `#${[red, green, blue]
+        .map((channel) => channel.toString(16).padStart(2, "0"))
+        .join("")}`;
+    };
+    const fills = Array.from(
+      document.querySelectorAll(
+        ".blockly-review .blocklyBlockCanvas .blocklyPath",
+      ),
+      (path) => path.getAttribute("fill"),
+    );
+    return {
+      accent: tokenColor("--color-accent"),
+      success: tokenColor("--color-success"),
+      fills,
+    };
+  });
+  expect(blockColors.fills).toEqual([
+    blockColors.accent,
+    blockColors.accent,
+    blockColors.success,
+  ]);
+
+  await page.setViewportSize({ width: 375, height: 896 });
+  const metrics = await page.evaluate(() => ({
+    viewport: window.innerWidth,
+    root: document.documentElement.scrollWidth,
+    body: document.body.scrollWidth,
+  }));
+  expect(metrics.root).toBeLessThanOrEqual(metrics.viewport);
+  expect(metrics.body).toBeLessThanOrEqual(metrics.viewport);
+});
+
 for (const width of [320, 375, 414, 768]) {
   test(`renders without horizontal overflow at ${String(width)}px`, async ({
     page,

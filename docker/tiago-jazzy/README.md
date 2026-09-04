@@ -51,3 +51,44 @@ Rerun `artifacts/tiago-observable.rrd`. They must include
 the four workflow nodes and correlated `robot.pose`, `robot.trajectory`,
 `action.state`, and `capability.progress` observations. Gazebo GUI and RViz may
 be launched separately for diagnosis; neither is a RoboArc UI dependency.
+
+For an optional GUI review recording, the host needs Docker, Xvfb, and
+GStreamer with `ximagesrc`, `x264enc`, `h264parse`, and `mp4mux`:
+
+```bash
+./docker/tiago-jazzy/run-gazebo-review.sh \
+  --image roboarc-tiago-jazzy:repro \
+  --output artifacts/tiago-proof-final/gazebo-review.mp4
+```
+
+The review wrapper uses NVIDIA GPU rendering by default (`--gpus all`) and
+validates the resulting MP4 inside the same image with `ffprobe`. Use
+`--software` only on a host without a usable NVIDIA runtime.
+
+The wrapper uses the same launch lifecycle and workflow, records a fixed
+1600x900 display after the TIAGo controllers and Nav2 report ready, with roughly
+three seconds of pre-roll and post-roll. It writes JSONL/Rerun artifacts beside
+the video. Validate it with:
+
+The wrapper prints the validated codec, dimensions, and duration. The image
+contains `ffprobe`, so validation does not depend on host media packages.
+
+To run the HTTP/WebSocket API with the real TIAGo adapter inside the ROS-enabled
+image, use:
+
+```bash
+roboarc serve --tiago --host 0.0.0.0 --port 8000
+```
+
+The default `roboarc serve` remains the MockAdapter Workbench API. The explicit
+TIAGo mode loads the separate `roboarc_tiago` integration package; ROS imports
+do not enter `roboarc.contracts` or `roboarc.runtime`.
+
+Serve the artifact on the LAN with:
+
+```bash
+python -m http.server 8080 \
+  --directory artifacts/tiago-proof-final --bind 0.0.0.0
+```
+
+Review URL: `http://<host-lan-ip>:8080/gazebo-review.mp4`.

@@ -6,8 +6,7 @@ from pathlib import Path
 from roboarc.contracts import WorkflowDocument
 from roboarc.runtime.adapter import CapabilityAdapter
 from roboarc.runtime.registry import CapabilityRegistry
-
-from .profile import TIAGO_MANIFESTS, TIAGO_PROFILE
+from roboarc_tiago.profile import TIAGO_MANIFESTS, TIAGO_PROFILE
 
 
 def test_tiago_profile_exposes_exact_v1_capability_refs() -> None:
@@ -37,6 +36,8 @@ def test_observable_workflow_uses_only_profile_contracts() -> None:
 
 
 def test_ros_adapter_declares_runtime_boundary_without_importing_ros() -> None:
-    source = (Path(__file__).parent / "adapter.py").read_text(encoding="utf-8")
+    source = (
+        Path(__file__).parents[2] / "src/roboarc_tiago/adapter.py"
+    ).read_text(encoding="utf-8")
     assert "class TiagoRosAdapter(CapabilityAdapter)" in source
     assert CapabilityAdapter.__module__ == "roboarc.runtime.adapter"

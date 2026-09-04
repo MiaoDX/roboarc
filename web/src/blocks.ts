@@ -4,6 +4,7 @@ import type { CapabilityRef, JsonValue } from "./domain";
 
 interface CapabilityBlockData {
   capabilityArguments?: Record<string, JsonValue>;
+  workflowNodeId?: string;
 }
 
 function capabilityData(block: Blockly.Block): CapabilityBlockData {
@@ -111,6 +112,17 @@ export function setCapabilityArgument(
   }
   args[name] = value;
   setCapabilityArguments(block, args);
+}
+
+export function getWorkflowNodeId(block: Blockly.Block): string | null {
+  return capabilityData(block).workflowNodeId ?? null;
+}
+
+export function setWorkflowNodeId(block: Blockly.Block, nodeId: string): void {
+  block.data = JSON.stringify({
+    ...capabilityData(block),
+    workflowNodeId: nodeId,
+  });
 }
 
 export function registerBlocks(): void {

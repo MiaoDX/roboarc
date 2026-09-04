@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from .telemetry_bridge import (
+from roboarc_tiago.telemetry_bridge import (
     estimated_distance_observation,
     pose_observations,
     ros_timestamp,

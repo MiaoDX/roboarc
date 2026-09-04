@@ -15,6 +15,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
+gzclient="${ROBOARC_GZCLIENT:-False}"
+trace="${ROBOARC_TRACE:-/artifacts/tiago-observable.jsonl}"
+rerun="${ROBOARC_RERUN:-/artifacts/tiago-observable.rrd}"
+manifest="${ROBOARC_MANIFEST:-/artifacts/review.json}"
+video="${ROBOARC_VIDEO:-gazebo-review.mp4}"
+video_origin="${ROBOARC_VIDEO_ORIGIN:-}"
+start_gate="${ROBOARC_START_GATE:-}"
+ready_gate="${ROBOARC_READY_GATE:-}"
+end_gate="${ROBOARC_END_GATE:-}"
+
 ros2 launch tiago_gazebo tiago_gazebo.launch.py \
   is_public_sim:=True \
   navigation:=True \
@@ -25,7 +35,7 @@ ros2 launch tiago_gazebo tiago_gazebo.launch.py \
   moveit:=False \
   tuck_arm:=False \
   rviz:=False \
-  gzclient:=False \
+  gzclient:="${gzclient}" \
   gazebo_version:=gazebo &
 gazebo_pid=$!
 
@@ -60,7 +70,27 @@ if ! ros2 action list | grep -qx '/head_controller/follow_joint_trajectory'; the
   exit 5
 fi
 
+if [[ -n "${ready_gate}" ]]; then
+  touch "${ready_gate}"
+fi
+
+if [[ -n "${start_gate}" ]]; then
+  echo "TIAGo stack ready; waiting for review capture gate ${start_gate}."
+  while [[ ! -e "${start_gate}" ]]; do
+    sleep 0.1
+  done
+  video_origin="$(<"${start_gate}")"
+fi
+
 python -m tests.tiago.run_manual \
   --workflow examples/workflows/tiago-observable.json \
-  --trace /artifacts/tiago-observable.jsonl \
-  --rerun /artifacts/tiago-observable.rrd
+  --trace "${trace}" \
+  --rerun "${rerun}" \
+  --manifest "${manifest}" \
+  --video "${video}" \
+  --video-origin "${video_origin:-}"
+
+if [[ -n "${end_gate}" ]]; then
+  echo "Workflow complete; holding review post-roll."
+  sleep 3
+fi

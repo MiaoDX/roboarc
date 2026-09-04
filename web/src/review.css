@@ -1,0 +1,237 @@
+.review-shell {
+  min-height: 100dvh;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+.review-header {
+  height: 4.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4vw;
+  border-bottom: 1px solid var(--color-rule);
+}
+.review-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+}
+.review-brand strong {
+  font-size: 1.2rem;
+}
+.review-brand span {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  border-left: 1px solid var(--color-rule);
+  padding-left: 0.7rem;
+}
+.review-link,
+.run-panel a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.review-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.review-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 2rem;
+  padding: 4.2rem 8vw 3.2rem;
+  background: var(--color-paper-2);
+  border-bottom: 1px solid var(--color-rule);
+}
+.review-kicker {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.review-hero h1 {
+  margin: 0.6rem 0 0.7rem;
+  font: 600 clamp(1.8rem, 4vw, 3.5rem)/1.05 var(--font-display);
+}
+.review-hero p {
+  max-width: 38rem;
+  margin: 0;
+  color: var(--color-muted);
+}
+.review-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.4rem;
+  color: var(--color-success);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.review-status span {
+  color: var(--color-rule-strong);
+}
+.artifact-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: var(--color-accent);
+  color: white;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.review-grid {
+  display: grid;
+  grid-template-columns: minmax(20rem, 0.82fr) minmax(30rem, 1.18fr);
+  align-items: start;
+  gap: 1px;
+  background: var(--color-rule);
+  border-bottom: 1px solid var(--color-rule);
+}
+.workflow-panel,
+.run-panel,
+.video-panel {
+  background: var(--color-paper);
+  padding: 2rem 4vw;
+}
+.review-side {
+  display: grid;
+  gap: 1px;
+  background: var(--color-rule);
+  position: sticky;
+  top: 1rem;
+}
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1rem;
+}
+.panel-heading h2 {
+  margin: 0.45rem 0 1.35rem;
+  font: 600 1.2rem var(--font-display);
+}
+.ir-badge,
+.video-meta {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+}
+.step-list {
+  display: grid;
+  gap: 0.7rem;
+}
+.workflow-step {
+  display: grid;
+  grid-template-columns: 1.7rem 1.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.65rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--color-rule);
+}
+.step-index {
+  color: var(--color-muted);
+  font: 600 0.78rem var(--font-mono);
+  padding-top: 0.15rem;
+}
+.step-icon {
+  color: var(--color-success);
+  margin-top: 0.1rem;
+}
+.workflow-step h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.94rem;
+}
+.workflow-step code,
+.mono {
+  font: 0.72rem var(--font-mono);
+  color: var(--color-accent);
+}
+.workflow-step p {
+  margin: 0.35rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+}
+.success-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--color-success);
+  margin-top: 0.3rem;
+}
+.run-panel dl {
+  margin: 0.2rem 0 0;
+}
+.run-panel dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--color-rule);
+  font-size: 0.8rem;
+}
+.run-panel dt {
+  color: var(--color-muted);
+}
+.run-panel dd {
+  margin: 0;
+  text-align: right;
+}
+.video-panel {
+  padding-top: 2rem;
+}
+.video-panel video {
+  width: 100%;
+  display: block;
+  aspect-ratio: 16 / 9;
+  background: #101214;
+  border: 1px solid var(--color-rule);
+}
+@media (max-width: 720px) {
+  .review-header {
+    padding: 0 1rem;
+  }
+  .review-brand span {
+    display: none;
+  }
+  .review-hero {
+    display: block;
+    padding: 2.4rem 1rem 2rem;
+  }
+  .artifact-button {
+    margin-top: 1.5rem;
+  }
+  .review-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .review-side {
+    display: contents;
+  }
+  .video-panel {
+    order: 1;
+  }
+  .workflow-panel {
+    order: 2;
+  }
+  .run-panel {
+    order: 3;
+  }
+  .workflow-panel,
+  .run-panel,
+  .video-panel {
+    padding: 1.4rem 1rem;
+  }
+  .video-meta {
+    display: none;
+  }
+}

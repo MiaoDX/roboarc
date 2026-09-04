@@ -58,6 +58,9 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser = subparsers.add_parser("serve", help="start the local HTTP/WebSocket runtime")
     serve_parser.add_argument("--host", default="127.0.0.1")
     serve_parser.add_argument("--port", type=int, default=8000)
+    serve_parser.add_argument(
+        "--tiago", action="store_true", help="serve the explicit TIAGo ROS adapter"
+    )
     return parser
 
 
@@ -150,7 +153,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 raise ValueError("--port must be between 1 and 65535")
             import uvicorn
 
-            uvicorn.run("roboarc.api.app:app", host=args.host, port=args.port, reload=False)
+            module = "roboarc_tiago.api_app:app" if args.tiago else "roboarc.api.app:app"
+            uvicorn.run(module, host=args.host, port=args.port, reload=False)
             return 0
     except FileNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
