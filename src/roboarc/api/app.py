@@ -44,9 +44,13 @@ def create_app(
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
         await runtime.shutdown()
-        wait_for_idle = getattr(active_adapter, "wait_for_idle", None)
-        if wait_for_idle is not None:
-            await wait_for_idle()
+        close = getattr(active_adapter, "close", None)
+        if close is not None:
+            await close()
+        else:
+            wait_for_idle = getattr(active_adapter, "wait_for_idle", None)
+            if wait_for_idle is not None:
+                await wait_for_idle()
 
     app = FastAPI(
         title="RoboArc Runtime API",

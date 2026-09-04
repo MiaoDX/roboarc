@@ -1,4 +1,4 @@
-"""ROS 2 Jazzy adapter used only by the TIAGo manual proof lane."""
+"""ROS 2 Jazzy adapter for the optional TIAGo integration lane."""
 
 from __future__ import annotations
 

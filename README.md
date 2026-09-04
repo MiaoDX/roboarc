@@ -94,6 +94,19 @@ The workbench opens at `http://127.0.0.1:5173` and proxies the API to
 `http://127.0.0.1:8000`. Set `ROBOARC_API_TARGET` when the API uses another
 local port. Run the browser workflow gate with `npm run test:e2e`.
 
+For a user-facing view of the recorded TIAGo workflow, open
+`http://127.0.0.1:5173/?review=tiago`. This review view shows the four Workflow
+IR steps, the completed run summary, the Gazebo MP4, and links to the JSONL and
+Rerun artifacts. When the manifest includes Execution Timeline metadata, video
+playback and seeking highlight the active Workflow IR node from the same run.
+The timeline is recorded-playback synchronization, not live Gazebo control.
+Serve the artifact directory on port 8080 as documented below;
+Vite proxies it through `/artifacts`, so the browser uses one origin. When
+sharing on a LAN, start Vite with `--host 0.0.0.0`. Set
+`ROBOARC_ARTIFACT_TARGET` when the artifact server uses another local port.
+The route is driven by `review.json`, not by the TIAGo workflow name: another
+run can reuse it by serving its own schema-valid manifest and artifacts.
+
 The OpenAPI UI is available at `/docs`. Core endpoints are under `/api/v1`:
 
 ```text
@@ -126,6 +139,7 @@ src/roboarc/contracts/   Versioned external contracts
 src/roboarc/runtime/     Validation, execution, events, MockAdapter, and deterministic simulation
 src/roboarc/telemetry.py Backend-neutral pose, trajectory, action, and progress observations
 src/roboarc/api/         FastAPI HTTP/WebSocket transport
+src/roboarc_tiago/       Optional TIAGo ROS 2 integration package
 schemas/                 Generated JSON Schemas
 examples/workflows/      Executable Workflow IR examples
 scripts/                 Schema generation tooling

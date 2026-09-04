@@ -14,6 +14,17 @@ manifest-driven arguments, project download/upload, local and backend
 validation, run/stop controls, stable block highlighting, progress, logs,
 errors, duration, terminal results, and WebSocket reconnect/replay.
 
+The TIAGo review route loads a same-run manifest, renders its canonical
+Workflow IR as read-only Blockly, and presents the correlated runtime metadata,
+JSONL, Rerun, and Gazebo video artifacts. Its reusable Execution Timeline maps
+video time to node.started/node.finished events from the same trace, so playback
+and seeking highlight the active Blockly node. This is recorded-playback
+synchronization; live Gazebo control remains out of scope. Its capture starts
+only after Nav2 and the TIAGo controllers report ready, avoiding simulator
+startup footage.
+The manifest renderer recursively supports sequence, wait, and capability nodes
+and verifies run/workflow identity before presenting a result.
+
 The deterministic simulation produces correlated Runtime events, pose,
 trajectory, action state, and capability progress as JSONL and native Rerun
 recordings. The pinned TIAGo lane runs the same observation vocabulary through
@@ -25,12 +36,15 @@ outside the core package.
 The required local checks pass:
 
 ```text
-49 isolated core Python tests passed with 3 optional ROS/TIAGo/Rerun tests
-skipped; 9 TIAGo tests passed in the Jazzy container; 24 Web unit tests and 7
-Chromium browser workflows passed. The deterministic proof produced 47 correlated
-records. The live TIAGo workflow succeeded across all four capability nodes,
-produced 1,259 records, moved the robot approximately 0.759 m, and emitted a
-native Rerun recording verified with pose and trajectory spatial entities.
+44 core Python tests passed with 2 optional ROS/TIAGo tests skipped; 27 Web unit
+tests and 8 Chromium browser workflows passed. The deterministic proof produced
+47 correlated records. The live
+GPU TIAGo workflow succeeded across all four capability nodes, produced 1,339
+records, and emitted a 14.79-second H.264 1600x900 Gazebo recording plus a
+native Rerun recording that passed `rerun rrd verify`. Browser review confirmed
+the manifest-backed Blockly, run metadata, artifact links, and video render.
+The ROS-enabled image also served the explicit TIAGo API with the `tiago-sim`
+profile and four exact-version capabilities, then shut down cleanly.
 ruff check .
 mypy src/roboarc
 python -m compileall -q src scripts

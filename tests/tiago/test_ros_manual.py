@@ -9,7 +9,7 @@ pytest.importorskip("rclpy", reason="ROS 2 Jazzy is required for TIAGo manual te
 pytest.importorskip("nav2_msgs", reason="Nav2 messages are required for TIAGo manual tests")
 pytest.importorskip("control_msgs", reason="control_msgs is required for TIAGo manual tests")
 
-from .adapter import TiagoRosAdapter, _clamp, _transform_point
+from roboarc_tiago.adapter import TiagoRosAdapter, _clamp, _transform_point
 
 
 def test_tiago_adapter_uses_capability_adapter_boundary() -> None:

@@ -6,6 +6,7 @@ import {
   blockForNodeId,
   compileWorkspace,
   loadProject,
+  loadWorkflow,
   saveProject,
   WorkflowDraftError,
 } from "./compiler";
@@ -95,6 +96,21 @@ describe("workspace compiler", () => {
     expect(blockForNodeId(restored, nodeId)?.id).toBe(wait.id);
     expect(compileWorkspace(restored, "Demo")).toEqual(project.workflow);
     expect(validateProject(project)).toBe(true);
+  });
+
+  it("loads canonical Workflow IR and preserves node IDs for highlighting", () => {
+    const workflow = compileWorkspace(sequenceWorkspace().workspace, "Demo");
+    workflow.workflow.id = "canonical-root";
+    const sourceChild = (workflow.workflow as SequenceNode).children[0];
+    sourceChild.id = "canonical-step";
+    const destination = new Blockly.Workspace();
+    loadWorkflow(workflow, destination);
+
+    expect(blockForNodeId(destination, "canonical-step")).not.toBeNull();
+    expect(blockForNodeId(destination, "missing-step")).toBeNull();
+    expect(compileWorkspace(destination, "Demo").workflow).toEqual(
+      workflow.workflow,
+    );
   });
 
   it("rejects a full invalid project without mutating the destination", () => {

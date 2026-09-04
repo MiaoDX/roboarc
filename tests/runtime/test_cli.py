@@ -4,6 +4,23 @@ from roboarc.cli import main
 from roboarc.telemetry import TelemetryKind
 
 
+def test_serve_tiago_selects_explicit_app(monkeypatch) -> None:
+    invoked: dict[str, object] = {}
+
+    def fake_run(app: str, **kwargs: object) -> None:
+        invoked.update(app=app, **kwargs)
+
+    monkeypatch.setattr("uvicorn.run", fake_run)
+
+    assert main(["serve", "--tiago", "--host", "0.0.0.0", "--port", "8765"]) == 0
+    assert invoked == {
+        "app": "roboarc_tiago.api_app:app",
+        "host": "0.0.0.0",
+        "port": 8765,
+        "reload": False,
+    }
+
+
 def test_validate_command(capsys) -> None:
     exit_code = main(["validate", "examples/workflows/mock-demo.json"])
     captured = capsys.readouterr()
