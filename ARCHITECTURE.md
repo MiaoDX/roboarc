@@ -5,8 +5,10 @@ and robot-native integration.
 
 ```text
 React workbench -> Blockly editor -> Workflow IR -> Runtime -> Capability adapter -> Robot
-       |               |                  |             |
- project/runtime UI   editor state       JSON Schemas  ordered events
+       |               |                  |          \             /
+ project/runtime UI   editor state       JSON Schemas  ordered events + telemetry
+                                                          |
+                                                     JSONL / Rerun
 ```
 
 The React application is the workbench shell. It owns project controls,
@@ -20,14 +22,22 @@ The implemented core is under `src/roboarc`:
 
 - `contracts/` owns strict, versioned external data contracts.
 - `runtime/` validates and executes Workflow IR without ROS/vendor imports.
+- `telemetry.py` defines backend-neutral pose, trajectory, action-state, and
+  progress observations correlated with runtime identity and timestamps.
 - `api/` exposes discovery, validation, run control, replay, and live events.
-- `cli.py` provides local validation, execution, and server commands.
+- `cli.py` provides local validation, execution, simulation, trace viewing, and
+  server commands.
 - `web/src/` contains the React shell, Blockly blocks, compiler, API client,
   runtime event reducer, and tokenized workbench styling.
 
 Adapters translate capability invocations and lifecycle semantics into native
 operations. A cancellation request never proves that the native operation has
 stopped; terminal results must report that distinction truthfully.
+
+The deterministic simulation adapter proves the observation path without ROS.
+The separate TIAGo manual lane translates Nav2, controller, TF, and simulator
+feedback into the same vocabulary using a pinned ROS 2 Jazzy/Gazebo Harmonic
+stack. Simulator and ROS dependencies do not enter the runtime core.
 
 See [docs/architecture.md](docs/architecture.md) for subsystem boundaries,
 security and portability constraints, and planned extension points. Runtime and

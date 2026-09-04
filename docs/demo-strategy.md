@@ -22,7 +22,15 @@ perception.detect_object
 
 A mock run should still produce realistic stage/progress events so the runtime UI can be developed independently.
 
-## 2. TIAGo: reference integration candidate
+## 2. Observable simulation loop and TIAGo reference integration
+
+The first user-visible simulation milestone should prove the complete flow
+before requiring a full robot stack. A deterministic state source should feed
+Runtime events and robot telemetry into a Rerun trace that can be opened in a
+Web Viewer or standalone viewer. The Workbench remains the control and status
+surface; the viewer is external by default.
+
+TIAGo is the first ROS-native integration after that loop is proven:
 
 TIAGo is the leading first real simulation because its public ROS 2 simulation combines the capability breadth needed to make visual programming interesting:
 

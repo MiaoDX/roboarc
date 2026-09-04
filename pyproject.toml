@@ -17,6 +17,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+rerun = [
+  "rerun-sdk>=0.31,<0.32",
+]
 dev = [
   "pytest>=9,<10",
   "pytest-asyncio>=1.3,<2",

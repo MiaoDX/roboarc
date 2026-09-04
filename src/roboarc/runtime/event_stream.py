@@ -54,6 +54,10 @@ class EventStream:
             raise ValueError("after_seq must be non-negative")
         return tuple(self._events[after_seq:])
 
+    @property
+    def history(self) -> tuple[RuntimeEvent, ...]:
+        return tuple(self._events)
+
     async def subscribe(self, after_seq: int = 0) -> AsyncIterator[RuntimeEvent]:
         """Replay history after `after_seq`, then wait for live events until closure."""
 

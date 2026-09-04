@@ -25,3 +25,7 @@ __all__ = [
 ]
 
 __version__ = "0.1.0.dev0"
+
+from roboarc.telemetry import Observation, observations, write_trace
+
+__all__ += ["Observation", "observations", "write_trace"]

@@ -93,8 +93,14 @@ asyncio Runtime ---- ordered EventStream ---- HTTP/WebSocket clients
 CapabilityInvocation lifecycle
     |
     v
-MockAdapter
+MockAdapter / DeterministicSimulationAdapter
 ```
+
+The simulation adapter produces backend-neutral pose, trajectory, action-state,
+and progress observations. Runtime events and robot observations share
+run/node/invocation identity and timestamps, then export to JSONL or an optional
+native Rerun recording. ROS/TIAGo translation remains in the separate manual
+proof lane under `tests/tiago`; no ROS imports enter the contracts or runtime.
 
 The Web editor consumes the same JSON Schemas and API rather than introducing a
 second execution model. It uses HTTP for discovery, validation, snapshots, and
