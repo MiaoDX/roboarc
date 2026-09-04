@@ -96,6 +96,87 @@ test("creates, validates, saves, reloads, and executes a workflow", async ({
   ).toBeAttached();
 });
 
+test("uses the active profile toolbox and blocks incompatible runs", async ({
+  page,
+}) => {
+  let runRequests = 0;
+  await page.route("**/api/v1/profile", (route) =>
+    route.fulfill({
+      json: {
+        profile_schema_version: 1,
+        id: "reachy2-sim",
+        title: "Reachy 2 MuJoCo",
+        adapter: "reachy2-sdk",
+        capabilities: [{ id: "demo.instant_success", version: 1 }],
+      },
+    }),
+  );
+  await page.route("**/api/v1/capabilities", (route) =>
+    route.fulfill({
+      json: [
+        {
+          manifest_schema_version: 1,
+          id: "demo.instant_success",
+          version: 1,
+          title: "Instant success",
+          category: "Demo",
+          inputs: { value: { type: "string", required: true } },
+          outputs: {},
+          execution: { timeout_ms: 1000, cancellable: false },
+          progress: { mode: "none", source: null },
+          resources: [],
+          compatible_profiles: [],
+        },
+        {
+          manifest_schema_version: 1,
+          id: "demo.fail",
+          version: 1,
+          title: "Must be filtered",
+          category: "Hidden",
+          inputs: {},
+          outputs: {},
+          execution: { timeout_ms: 1000, cancellable: false },
+          progress: { mode: "none", source: null },
+          resources: [],
+          compatible_profiles: [],
+        },
+      ],
+    }),
+  );
+  await page.route("**/api/v1/workflows/compatibility", (route) =>
+    route.fulfill({
+      json: {
+        active_profile_id: "reachy2-sim",
+        source_profile_id: "reachy2-sim",
+        compatible: false,
+        nodes: {
+          capability_1: {
+            status: "unknown",
+            capability: { id: "demo.instant_success", version: 1 },
+            reason: "profile_compatibility_unknown",
+          },
+        },
+      },
+    }),
+  );
+  await page.route("**/api/v1/runs", (route) => {
+    runRequests += 1;
+    return route.fulfill({ status: 500 });
+  });
+
+  await createCapabilityWorkflow(page, "demo.instant_success@1");
+  await expect(page.getByTestId("active-profile")).toContainText(
+    "Reachy 2 MuJoCo (reachy2-sim)",
+  );
+  await expect(page.getByText("Hidden", { exact: true })).toHaveCount(0);
+  await page.getByLabel("value").fill("blocked");
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.getByTestId("compatibility-capability_1")).toContainText(
+    "unknown (profile_compatibility_unknown)",
+  );
+  expect(runRequests).toBe(0);
+});
+
 test("shows failure, progress, and timeout truthfully", async ({ page }) => {
   await createCapabilityWorkflow(page, "demo.fail@1");
   await page.getByLabel("message").fill("browser failure");
@@ -194,7 +275,7 @@ test("renders a canonical review manifest as Blockly", async ({ page }) => {
       }),
     });
   });
-  await page.route("**/artifacts/trace.jsonl", async (route) => {
+  await page.route("**/trace.jsonl?run=run-browser-review", async (route) => {
     await route.fulfill({
       contentType: "application/x-ndjson",
       body: [
@@ -223,7 +304,7 @@ test("renders a canonical review manifest as Blockly", async ({ page }) => {
         .join("\n"),
     });
   });
-  await page.route("**/artifacts/review.mp4", async (route) => {
+  await page.route("**/review.mp4?run=run-browser-review", async (route) => {
     await route.fulfill({ contentType: "video/mp4", body: Buffer.from([]) });
   });
 

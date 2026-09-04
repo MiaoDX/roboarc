@@ -182,6 +182,7 @@ class CapabilityManifest(ContractModel):
     execution: ExecutionTraits = Field(default_factory=ExecutionTraits)
     progress: ProgressSpec = Field(default_factory=ProgressSpec)
     resources: tuple[ResourceName, ...] = ()
+    compatible_profiles: tuple[Identifier, ...] = ()
 
     @field_validator("inputs", "outputs")
     @classmethod
@@ -194,6 +195,11 @@ class CapabilityManifest(ContractModel):
     @classmethod
     def resources_are_unique(cls, value: tuple[str, ...]) -> tuple[str, ...]:
         return ensure_unique(value, "resources")
+
+    @field_validator("compatible_profiles")
+    @classmethod
+    def compatible_profiles_are_unique(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        return ensure_unique(value, "compatible_profiles")
 
     @property
     def ref(self) -> CapabilityRef:

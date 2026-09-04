@@ -65,3 +65,14 @@ def test_workflow_json_round_trip_is_stable() -> None:
     workflow = WorkflowDocument.model_validate(original)
     reparsed = WorkflowDocument.model_validate(workflow.model_dump(mode="json"))
     assert reparsed == workflow
+
+
+def test_workflow_v1_profile_metadata_is_optional() -> None:
+    legacy = WorkflowDocument.model_validate_json(
+        Path("examples/workflows/mock-demo.json").read_text(encoding="utf-8")
+    )
+    assert legacy.profile_id is None
+
+    pinned = legacy.model_copy(update={"profile_id": "mock"})
+    assert pinned.workflow_schema_version == 1
+    assert pinned.profile_id == "mock"

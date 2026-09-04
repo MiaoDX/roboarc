@@ -18,6 +18,7 @@ class HealthResponse(ContractModel):
 
 class StartRunResponse(ContractModel):
     run_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9._-]{0,127}$")
+    profile_id: str
     state: RunState
 
 
@@ -29,6 +30,7 @@ class CancelRunResponse(ContractModel):
 
 class RunSnapshot(ContractModel):
     run_id: str
+    profile_id: str
     state: RunState
     done: bool
     last_seq: int = Field(ge=0)

@@ -82,6 +82,16 @@ Start the local runtime API:
 roboarc serve --host 127.0.0.1 --port 8000
 ```
 
+Select exactly one adapter profile when the service starts. The default is
+`mock`; the active profile is stable for the life of the process:
+
+```bash
+roboarc serve --profile deterministic-simulation
+roboarc serve --profile tiago-sim
+```
+
+`--tiago` remains as a backwards-compatible alias for `--profile tiago-sim`.
+
 Start the Web workbench in another terminal:
 
 ```bash
@@ -99,6 +109,9 @@ For a user-facing view of the recorded TIAGo workflow, open
 IR steps, the completed run summary, the Gazebo MP4, and links to the JSONL and
 Rerun artifacts. When the manifest includes Execution Timeline metadata, video
 playback and seeking highlight the active Workflow IR node from the same run.
+On desktop, the Gazebo recording is the larger sticky review surface beside the
+smaller Blockly panel, keeping robot behavior and node highlighting visible
+together.
 The timeline is recorded-playback synchronization, not live Gazebo control.
 Serve the artifact directory on port 8080 as documented below;
 Vite proxies it through `/artifacts`, so the browser uses one origin. When
@@ -114,6 +127,7 @@ GET  /health
 GET  /profile
 GET  /capabilities
 POST /workflows/validate
+POST /workflows/compatibility
 POST /runs
 GET  /runs/{run_id}
 POST /runs/{run_id}/cancel

@@ -11,6 +11,7 @@ from uuid import uuid4
 from roboarc.contracts import (
     CapabilityNode,
     CapabilityResult,
+    CompatibilityReport,
     ErrorCode,
     EventType,
     ExecutionError,
@@ -32,7 +33,12 @@ from roboarc.runtime.adapter import (
 from roboarc.runtime.context import ExecutionContext
 from roboarc.runtime.event_stream import EventStream
 from roboarc.runtime.registry import CapabilityRegistry
-from roboarc.runtime.validation import normalize_arguments, validate_output, validate_workflow
+from roboarc.runtime.validation import (
+    compatibility_report,
+    normalize_arguments,
+    validate_output,
+    validate_workflow,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +70,10 @@ class RunHandle:
     @property
     def stream(self) -> EventStream:
         return self._execution.stream
+
+    @property
+    def profile_id(self) -> str:
+        return self._execution.registry.profile.id
 
     @property
     def done(self) -> bool:
@@ -103,6 +113,9 @@ class Runtime:
 
     def validate(self, workflow: WorkflowDocument) -> ValidationReport:
         return validate_workflow(workflow, self.registry)
+
+    def compatibility(self, workflow: WorkflowDocument) -> CompatibilityReport:
+        return compatibility_report(workflow, self.registry)
 
     async def start(self, workflow: WorkflowDocument) -> RunHandle:
         report = self.validate(workflow)
@@ -201,6 +214,7 @@ class _Execution:
         result = RunResult(
             run_id=self.run_id,
             workflow_id=self.workflow.id,
+            profile_id=self.registry.profile.id,
             state=state,
             error=error,
             started_at=started_at,

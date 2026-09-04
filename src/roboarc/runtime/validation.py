@@ -8,6 +8,10 @@ from typing import Any
 from roboarc.contracts import (
     CapabilityManifest,
     CapabilityNode,
+    CompatibilityReason,
+    CompatibilityReport,
+    CompatibilityStatus,
+    NodeCompatibility,
     SequenceNode,
     ValidationIssue,
     ValidationReport,
@@ -31,26 +35,69 @@ def validate_workflow(
     registry: CapabilityRegistry,
 ) -> ValidationReport:
     issues: list[ValidationIssue] = []
+    compatibility_nodes = compatibility_report(workflow, registry).nodes
     for node in iter_nodes(workflow.workflow):
         if not isinstance(node, CapabilityNode):
             continue
-        manifest = registry.get(node.capability)
-        if manifest is None:
+        compatibility = compatibility_nodes[node.id]
+        if compatibility.status is not CompatibilityStatus.COMPATIBLE:
             issues.append(
                 ValidationIssue(
-                    code="unknown_capability",
+                    code=compatibility.reason.value,
                     message=(
-                        f"active profile {registry.profile.id!r} does not provide "
-                        f"{node.capability.id}@{node.capability.version}"
+                        f"node is {compatibility.status.value} on active profile "
+                        f"{registry.profile.id!r}: {compatibility.reason.value}"
                     ),
                     node_id=node.id,
                     path=f"node:{node.id}.capability",
                 )
             )
             continue
+        manifest = registry.require(node.capability)
         issues.extend(validate_values(node.args, manifest.inputs, node_id=node.id, kind="input"))
 
     return ValidationReport(valid=not issues, issues=tuple(issues))
+
+
+def compatibility_report(
+    workflow: WorkflowDocument,
+    registry: CapabilityRegistry,
+) -> CompatibilityReport:
+    nodes: dict[str, NodeCompatibility] = {}
+    active_profile_id = registry.profile.id
+    for node in iter_nodes(workflow.workflow):
+        if not isinstance(node, CapabilityNode):
+            continue
+        exact = registry.get(node.capability)
+        available_versions = registry.versions(node.capability.id)
+        if exact is None and not available_versions:
+            status = CompatibilityStatus.MISSING
+            reason = CompatibilityReason.CAPABILITY_MISSING
+        elif exact is None:
+            status = CompatibilityStatus.INCOMPATIBLE
+            reason = CompatibilityReason.CAPABILITY_VERSION_MISMATCH
+        elif workflow.profile_id is None or workflow.profile_id == active_profile_id:
+            status = CompatibilityStatus.COMPATIBLE
+            reason = CompatibilityReason.EXACT_CAPABILITY_MATCH
+        elif workflow.profile_id in exact.compatible_profiles:
+            status = CompatibilityStatus.COMPATIBLE
+            reason = CompatibilityReason.DECLARED_PROFILE_COMPATIBILITY
+        else:
+            status = CompatibilityStatus.UNKNOWN
+            reason = CompatibilityReason.PROFILE_COMPATIBILITY_UNKNOWN
+        nodes[node.id] = NodeCompatibility(
+            status=status,
+            capability=node.capability,
+            reason=reason,
+        )
+    return CompatibilityReport(
+        active_profile_id=active_profile_id,
+        source_profile_id=workflow.profile_id,
+        compatible=all(
+            node.status is CompatibilityStatus.COMPATIBLE for node in nodes.values()
+        ),
+        nodes=nodes,
+    )
 
 
 def normalize_arguments(manifest: CapabilityManifest, args: dict[str, Any]) -> dict[str, Any]:
@@ -124,5 +171,3 @@ def validate_values(
                 )
             )
     return issues
-
-

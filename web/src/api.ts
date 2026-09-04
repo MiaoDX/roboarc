@@ -1,5 +1,7 @@
 import type {
   CapabilityManifest,
+  CompatibilityReport,
+  RobotProfile,
   RunResult,
   RunState,
   RuntimeEvent,
@@ -14,6 +16,7 @@ import {
 
 export interface StartRunResponse {
   run_id: string;
+  profile_id: string;
   state: RunState;
 }
 export interface CancelRunResponse {
@@ -27,6 +30,7 @@ export interface RunSnapshot {
   done: boolean;
   last_seq: number;
   result: RunResult | null;
+  profile_id: string;
 }
 
 export function apiUrl(path: string, origin = window.location.origin): string {
@@ -73,6 +77,19 @@ export async function discoverCapabilities(): Promise<CapabilityManifest[]> {
   )
     throw new Error("Runtime returned invalid capability manifests.");
   return values as unknown as CapabilityManifest[];
+}
+
+export async function getProfile(): Promise<RobotProfile> {
+  return request<RobotProfile>("profile");
+}
+
+export async function getCompatibility(
+  workflow: WorkflowDocument,
+): Promise<CompatibilityReport> {
+  return request<CompatibilityReport>("workflows/compatibility", {
+    method: "POST",
+    body: JSON.stringify(workflow),
+  });
 }
 
 export async function validateRemote(

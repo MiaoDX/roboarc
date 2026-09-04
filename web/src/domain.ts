@@ -40,6 +40,28 @@ export interface CapabilityManifest {
   resources: string[];
 }
 
+export interface RobotProfile {
+  profile_schema_version: 1;
+  id: string;
+  title: string;
+  adapter: string;
+  capabilities: CapabilityRef[];
+}
+
+export type CompatibilityStatus =
+  "compatible" | "missing" | "incompatible" | "unknown";
+export interface CompatibilityNode {
+  status: CompatibilityStatus;
+  capability: CapabilityRef;
+  reason: string;
+}
+export interface CompatibilityReport {
+  active_profile_id: string;
+  source_profile_id: string | null;
+  compatible: boolean;
+  nodes: Record<string, CompatibilityNode>;
+}
+
 export interface CapabilityRef {
   id: string;
   version: number;
@@ -71,6 +93,7 @@ export interface WorkflowDocument {
   id: string;
   name: string;
   workflow: WorkflowNode;
+  profile_id?: string | null;
 }
 
 export interface EditorState {

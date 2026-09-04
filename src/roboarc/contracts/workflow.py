@@ -54,6 +54,7 @@ class WorkflowDocument(ContractModel):
     workflow_schema_version: Literal[1] = 1
     id: Identifier
     name: str = Field(min_length=1, max_length=200)
+    profile_id: Identifier | None = None
     workflow: WorkflowNode
 
     @model_validator(mode="after")

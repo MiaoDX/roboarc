@@ -7,6 +7,7 @@ import asyncio
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from pydantic import ValidationError
 
@@ -58,7 +59,14 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser = subparsers.add_parser("serve", help="start the local HTTP/WebSocket runtime")
     serve_parser.add_argument("--host", default="127.0.0.1")
     serve_parser.add_argument("--port", type=int, default=8000)
-    serve_parser.add_argument(
+    profile_group = serve_parser.add_mutually_exclusive_group()
+    profile_group.add_argument(
+        "--profile",
+        choices=("mock", "deterministic-simulation", "tiago-sim", "reachy2-sim"),
+        default="mock",
+        help="select the single adapter profile for this process",
+    )
+    profile_group.add_argument(
         "--tiago", action="store_true", help="serve the explicit TIAGo ROS adapter"
     )
     return parser
@@ -153,8 +161,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 raise ValueError("--port must be between 1 and 65535")
             import uvicorn
 
-            module = "roboarc_tiago.api_app:app" if args.tiago else "roboarc.api.app:app"
-            uvicorn.run(module, host=args.host, port=args.port, reload=False)
+            profile_id = "tiago-sim" if args.tiago else args.profile
+            app = _app_for_profile(profile_id)
+            uvicorn.run(app, host=args.host, port=args.port, reload=False)
             return 0
     except FileNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -166,6 +175,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"error: {exc}", file=sys.stderr)
         return 2
     return 2
+
+
+def _app_for_profile(profile_id: str) -> Any:
+    if profile_id == "mock":
+        return "roboarc.api.app:app"
+    if profile_id == "tiago-sim":
+        return "roboarc_tiago.api_app:app"
+    if profile_id == "reachy2-sim":
+        return "roboarc_reachy.api_app:app"
+    if profile_id == "deterministic-simulation":
+        from roboarc.api import create_app
+
+        return create_app(DeterministicSimulationAdapter())
+    raise ValueError(f"unknown profile: {profile_id}")
 
 
 if __name__ == "__main__":

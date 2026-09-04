@@ -144,6 +144,19 @@
       "title": "Name",
       "type": "string"
     },
+    "profile_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Profile Id"
+    },
     "workflow": {
       "discriminator": {
         "mapping": {

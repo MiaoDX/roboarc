@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { apiUrl, cancelRun, startRun, websocketUrl } from "./api";
+import {
+  apiUrl,
+  cancelRun,
+  getCompatibility,
+  getProfile,
+  startRun,
+  websocketUrl,
+} from "./api";
 import type { WorkflowDocument } from "./domain";
 
 const workflow: WorkflowDocument = {
@@ -61,6 +68,46 @@ describe("runtime API client", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "http://localhost:5173/api/v1/runs/run-1/cancel",
       expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("fetches the active profile and posts compatibility preflight", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            profile_schema_version: 1,
+            id: "reachy2-sim",
+            title: "Reachy 2 MuJoCo",
+            adapter: "reachy2-sdk",
+            capabilities: [],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            active_profile_id: "reachy2-sim",
+            source_profile_id: null,
+            compatible: true,
+            nodes: {},
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("window", { location: { origin: "http://localhost:5173" } });
+
+    await expect(getProfile()).resolves.toMatchObject({ id: "reachy2-sim" });
+    await getCompatibility(workflow);
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "http://localhost:5173/api/v1/workflows/compatibility",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify(workflow),
+      }),
     );
   });
 });

@@ -134,6 +134,7 @@ class NodeResult(ContractModel):
 class RunResult(ContractModel):
     run_id: Identifier
     workflow_id: Identifier
+    profile_id: Identifier | None = None
     state: RunState
     error: ExecutionError | None = None
     started_at: datetime

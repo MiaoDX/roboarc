@@ -1,0 +1,25 @@
+{
+  "workflow_schema_version": 1,
+  "id": "reachy-observable",
+  "name": "Reachy left arm pose",
+  "profile_id": "reachy2-sim",
+  "workflow": {
+    "id": "pose-left-arm",
+    "type": "capability",
+    "capability": {
+      "id": "reachy.arm.pose_joints",
+      "version": 1
+    },
+    "args": {
+      "side": "left",
+      "shoulder_pitch_deg": -90.0,
+      "shoulder_roll_deg": -45.0,
+      "elbow_yaw_deg": 90.0,
+      "elbow_pitch_deg": -110.0,
+      "wrist_roll_deg": 25.0,
+      "wrist_pitch_deg": -25.0,
+      "wrist_yaw_deg": 40.0,
+      "duration_ms": 3000
+    }
+  }
+}

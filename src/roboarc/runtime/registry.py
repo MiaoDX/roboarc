@@ -59,3 +59,8 @@ class CapabilityRegistry:
         if manifest is None:
             raise KeyError(f"unknown capability: {ref.id}@{ref.version}")
         return manifest
+
+    def versions(self, capability_id: str) -> tuple[int, ...]:
+        return tuple(
+            sorted(version for (item_id, version) in self._manifests if item_id == capability_id)
+        )
