@@ -1,0 +1,18 @@
+name: ros-jazzy
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  action-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run ROS 2 Jazzy proof image
+        run: |
+          docker build -f docker/ros-jazzy/Dockerfile -t roboarc-ros-jazzy .
+          docker run --rm roboarc-ros-jazzy

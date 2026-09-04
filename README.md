@@ -12,7 +12,7 @@ RoboArc composes product-level robot capabilities instead of exposing ROS topics
 
 ## Current status
 
-The repository is in the **v0.1b visual authoring** stage. The current branch contains:
+The repository has completed the **v0.1c ROS 2 Action lifecycle proof**. It contains:
 
 - strict, versioned Pydantic contracts for Workflow IR, project files, capability manifests, robot profiles, validation reports, execution results, and runtime events;
 - checked-in JSON Schemas generated from those contracts;
@@ -22,8 +22,11 @@ The repository is in the **v0.1b visual authoring** stage. The current branch co
 - a FastAPI service for discovery, validation, run control, event replay, and live WebSocket events;
 - a React/TypeScript/Vite workbench with embedded Blockly authoring, manifest-driven arguments, project save/load, validation, run controls, and runtime telemetry;
 - tests for contracts, runtime state transitions, adapter conformance, cancellation, timeout, CLI behavior, and HTTP/WebSocket integration.
+- an optional ROS 2 Jazzy/Python 3.12 proof harness that drives an unchanged
+  Workflow IR through the runtime and a genuine ROS Action.
 
-Real robot adapters are intentionally not included yet. The next implementation slice is a thin ROS 2 Action adapter test before TIAGo integration.
+The ROS harness is test-only and does not add ROS to the core package. A
+production robot adapter remains deferred to the v0.2 TIAGo milestone.
 
 ## Quick start
 
@@ -34,6 +37,15 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
 python -m pytest
+```
+
+### Optional ROS 2 Action proof
+
+The ROS integration is outside the core package. With Docker installed, run the CI acceptance lane locally:
+
+```bash
+docker build -f docker/ros-jazzy/Dockerfile -t roboarc-ros-jazzy .
+docker run --rm roboarc-ros-jazzy
 ```
 
 Validate and run the included workflow against the mock robot:
