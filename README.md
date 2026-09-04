@@ -114,6 +114,8 @@ For a user-facing view of the recorded demos, run
 set below `artifacts/`; select a card to open its Workflow IR, completed run
 summary, recording, JSONL, and Rerun artifacts. Legacy links such as
 `?review=tiago` remain supported.
+Once the `main` branch deploys the Review site, open the
+[live demo catalog](https://miaodx.com/roboarc/?review).
 On desktop, the Gazebo recording is the larger sticky review surface beside the
 smaller Blockly panel, keeping robot behavior and node highlighting visible
 together.
