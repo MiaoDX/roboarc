@@ -1,0 +1,48 @@
+{
+  "review_schema_version": 1,
+  "workflow": {
+    "workflow_schema_version": 1,
+    "id": "simulation-observable",
+    "name": "Observable deterministic navigation",
+    "profile_id": null,
+    "workflow": {
+      "id": "navigate",
+      "type": "capability",
+      "capability": {
+        "id": "simulation.navigate",
+        "version": 1
+      },
+      "args": {
+        "target_x": 2.0,
+        "target_y": 1.0,
+        "duration_ms": 100
+      }
+    }
+  },
+  "result": {
+    "run_id": "run-d69ca31d7426429d815c0c9dce6e9553",
+    "workflow_id": "simulation-observable",
+    "profile_id": "deterministic-simulation",
+    "state": "succeeded",
+    "error": null,
+    "started_at": "2026-09-04T02:05:10.710381Z",
+    "finished_at": "2026-09-04T02:05:10.814503Z"
+  },
+  "profile_id": "deterministic-simulation",
+  "observation_count": 47,
+  "artifacts": {
+    "trace": "trace.jsonl",
+    "rerun": "trace.rrd",
+    "video": "runtime-replay.mp4"
+  },
+  "timeline": {
+    "timebase": "utc",
+    "media": [
+      {
+        "id": "runtime-replay",
+        "artifact": "runtime-replay.mp4",
+        "origin": "2026-09-04T02:05:10.710381+00:00"
+      }
+    ]
+  }
+}

@@ -21,6 +21,105 @@ export interface ReviewTimeline {
   media: { id: string; artifact: string; origin: string }[];
 }
 
+export interface ReviewCatalogEntry {
+  id: string;
+  artifact_root: string;
+  manifest: ReviewManifest | null;
+  workflow: WorkflowDocument;
+  profile_id: string | null;
+  recorded: boolean;
+}
+
+export interface ReviewCatalogGroup {
+  id: string;
+  title: string;
+  description: string;
+  entries: ReviewCatalogEntry[];
+}
+
+const reviewGroupDefinitions: (Omit<ReviewCatalogGroup, "entries"> & {
+  entryIds: string[];
+})[] = [
+  {
+    id: "mock",
+    title: "Mock / Deterministic Simulation",
+    description:
+      "Local, repeatable runs for checking workflow behavior without a robot.",
+    entryIds: ["mock-demo", "simulation-observable"],
+  },
+  {
+    id: "tiago",
+    title: "TIAGo Gazebo",
+    description:
+      "Recorded task runs in the TIAGo Gazebo simulation environment.",
+    entryIds: ["tiago-look-and-say", "tiago-proof-final", "tiago-observable"],
+  },
+  {
+    id: "reachy",
+    title: "Reachy 2 MuJoCo",
+    description:
+      "Recorded task runs in the Reachy 2 MuJoCo simulation environment.",
+    entryIds: ["reachy-proof-final"],
+  },
+];
+
+export function groupReviewCatalog(
+  entries: ReviewCatalogEntry[],
+): ReviewCatalogGroup[] {
+  const assigned = new Set<string>();
+  const groups: ReviewCatalogGroup[] = reviewGroupDefinitions
+    .map(({ entryIds, ...definition }) => ({
+      ...definition,
+      entries: entries.filter((entry) => {
+        if (!entryIds.includes(entry.id)) return false;
+        assigned.add(entry.id);
+        return true;
+      }),
+    }))
+    .filter((group) => group.entries.length > 0);
+
+  const unassigned = entries.filter((entry) => !assigned.has(entry.id));
+  if (unassigned.length > 0) {
+    groups.push({
+      id: "other",
+      title: "Other demos",
+      description:
+        "Additional workflow demos that are not assigned to a robot group yet.",
+      entries: unassigned,
+    });
+  }
+  return groups;
+}
+
+export function parseReviewCatalog(value: unknown): ReviewCatalogEntry[] {
+  if (!Array.isArray(value)) throw new Error("Invalid review catalog");
+  return value.map((entry) => {
+    if (
+      !isRecord(entry) ||
+      typeof entry.id !== "string" ||
+      !/^[A-Za-z0-9._-]+$/.test(entry.id) ||
+      typeof entry.artifact_root !== "string" ||
+      (entry.artifact_root !== "" &&
+        !/^[A-Za-z0-9._-]+$/.test(entry.artifact_root))
+    )
+      throw new Error("Invalid review catalog entry");
+    return {
+      id: entry.id,
+      artifact_root: entry.artifact_root,
+      manifest:
+        entry.manifest === null ? null : parseReviewManifest(entry.manifest),
+      workflow: validateWorkflow(entry.workflow)
+        ? (entry.workflow as unknown as WorkflowDocument)
+        : (() => {
+            throw new Error("Invalid review catalog workflow");
+          })(),
+      profile_id:
+        typeof entry.profile_id === "string" ? entry.profile_id : null,
+      recorded: entry.recorded === true,
+    };
+  });
+}
+
 export interface NodeInterval {
   nodeId: string;
   startMs: number;

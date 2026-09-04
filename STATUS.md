@@ -40,8 +40,9 @@ outside the core package.
 The Reachy 2 lane is a minimal self-built image around Pollen Robotics'
 open-source MuJoCo fake SDK. Its completed proof artifact uses the
 `reachy2-sim` profile, completed successfully with 968 trace observations, a
-1280x720 H.264 recording, and pinned source/image provenance. The reusable
-artifact validator passes for both the Reachy and TIAGo proof directories.
+852x480 H.264 recording cropped to the actual rendered viewport, and pinned
+source/image provenance. The reusable artifact validator passes for both the
+Reachy and TIAGo proof directories.
 
 ## Verification
 
@@ -71,10 +72,10 @@ high-severity dependency audit.
 
 ## Next
 
-v0.3 is complete. The profile-selected Workbench, semantic robot blocks, and
-Reachy 2 SDK-facing MuJoCo proof are implemented. The next proposed slice is
-the TIAGo-first Community Task Composition plan in
-[`docs/plans/community-task-composition.md`](docs/plans/community-task-composition.md).
+v0.4 is complete. The profile-selected Workbench, semantic robot blocks,
+Reachy 2 SDK-facing MuJoCo proof, and TIAGo-first Community Task Composition
+journey are implemented and manually proven. The next product milestone is
+not scheduled until real usage identifies a concrete missing capability.
 The standalone review route
 and `scripts/validate_review_artifacts.py` keep the video, Workflow IR, result,
 trace, and profile identity checkable as one artifact set. Physical hardware

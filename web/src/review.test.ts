@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import type { WorkflowDocument } from "./domain";
 import {
   activeNodeAt,
+  groupReviewCatalog,
   nodeIntervals,
+  parseReviewCatalog,
   parseReviewManifest,
   workflowSteps,
 } from "./review";
@@ -52,6 +54,52 @@ function manifest() {
 }
 
 describe("review artifacts", () => {
+  it("groups the recorded catalog into mock, TIAGo, and Reachy demos", () => {
+    const entries = [
+      "mock-demo",
+      "simulation-observable",
+      "tiago-look-and-say",
+      "tiago-proof-final",
+      "tiago-observable",
+      "reachy-proof-final",
+    ].map((id) => ({
+      id,
+      artifact_root: id,
+      manifest: null,
+      workflow,
+      profile_id: null,
+      recorded: false,
+    }));
+
+    expect(
+      groupReviewCatalog(entries).map((group) => [
+        group.id,
+        group.entries.map(({ id }) => id),
+      ]),
+    ).toEqual([
+      ["mock", ["mock-demo", "simulation-observable"]],
+      [
+        "tiago",
+        ["tiago-look-and-say", "tiago-proof-final", "tiago-observable"],
+      ],
+      ["reachy", ["reachy-proof-final"]],
+    ]);
+  });
+
+  it("parses a catalog of review artifact sets", () => {
+    const parsed = parseReviewCatalog([
+      {
+        id: "tiago-proof-final",
+        artifact_root: "tiago-proof-final",
+        manifest: manifest(),
+        workflow,
+        profile_id: "robot-sim",
+        recorded: true,
+      },
+    ]);
+    expect(parsed[0].manifest?.workflow.id).toBe("nested-demo");
+  });
+
   it("derives half-open leaf node intervals from a matching trace", () => {
     const events = [
       {

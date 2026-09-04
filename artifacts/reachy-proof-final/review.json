@@ -143,22 +143,22 @@
   },
   "media": {
     "codec": "h264",
-    "width": 1280,
-    "height": 720,
+    "width": 852,
+    "height": 480,
     "fps": 30,
     "duration_seconds": 32.001176
   },
   "artifacts": {
     "trace": "reachy-observable.jsonl",
     "rerun": "reachy-observable.rrd",
-    "video": "mujoco-review.mp4"
+    "video": "mujoco-review-cropped.mp4"
   },
   "timeline": {
     "timebase": "utc",
     "media": [
       {
         "id": "mujoco-viewer",
-        "artifact": "mujoco-review.mp4",
+        "artifact": "mujoco-review-cropped.mp4",
         "origin": "2026-09-03T04:53:33.973Z"
       }
     ]

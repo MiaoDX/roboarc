@@ -7,6 +7,7 @@
     "id": "root",
     "type": "sequence",
     "children": [
+      {"id": "startup-settle", "type": "wait", "duration_ms": 3000},
       {"id": "look-left", "type": "capability", "capability": {"id": "head.look_at", "version": 1}, "args": {"frame": "base_footprint", "x": 1.2, "y": 0.8, "z": 1.5}},
       {"id": "say", "type": "capability", "capability": {"id": "speech.say", "version": 1}, "args": {"text": "I am looking left."}},
       {"id": "pause", "type": "wait", "duration_ms": 500},

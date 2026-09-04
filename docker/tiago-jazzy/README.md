@@ -84,11 +84,10 @@ The default `roboarc serve` remains the MockAdapter Workbench API. The explicit
 TIAGo mode loads the separate `roboarc_tiago` integration package; ROS imports
 do not enter `roboarc.contracts` or `roboarc.runtime`.
 
-Serve the artifact on the LAN with:
+Serve all valid review artifacts on the LAN with:
 
 ```bash
-python -m http.server 8080 \
-  --directory artifacts/tiago-proof-final --bind 0.0.0.0
+./scripts/serve_review.sh --host 0.0.0.0 --artifacts artifacts
 ```
 
-Review URL: `http://<host-lan-ip>:8080/gazebo-review.mp4`.
+Review URL: `http://<host-lan-ip>:5173/?review`.

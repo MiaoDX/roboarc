@@ -4,7 +4,7 @@ set -euo pipefail
 host="0.0.0.0"
 web_port="5173"
 artifact_port="8080"
-artifact_dir="artifacts/tiago-proof-final"
+artifact_dir="artifacts"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -20,10 +20,8 @@ artifact_dir="$(cd "$artifact_dir" 2>/dev/null && pwd)" || {
   echo "artifact directory not found: $artifact_dir" >&2
   exit 2
 }
-[[ -f "$artifact_dir/review.json" ]] || { echo "review manifest not found: $artifact_dir/review.json" >&2; exit 2; }
 command -v python >/dev/null || { echo "python is required" >&2; exit 2; }
 command -v npm >/dev/null || { echo "npm is required" >&2; exit 2; }
-python "$repo_root/scripts/validate_review_artifacts.py" "$artifact_dir" >/dev/null
 
 if [[ ! -f "$repo_root/web/dist/index.html" ]]; then
   npm --prefix "$repo_root/web" run build
@@ -35,7 +33,8 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-python -m http.server "$artifact_port" --directory "$artifact_dir" --bind "$host" &
+PYTHONPATH="$repo_root" python "$repo_root/scripts/serve_review_artifacts.py" \
+  --port "$artifact_port" --directory "$artifact_dir" --workflows "$repo_root/examples/workflows" --bind "$host" &
 artifact_pid=$!
 ROBOARC_ARTIFACT_TARGET="http://127.0.0.1:${artifact_port}" npm --prefix "$repo_root/web" run preview -- --host "$host" --port "$web_port" &
 web_pid=$!

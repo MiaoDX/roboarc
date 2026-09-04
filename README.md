@@ -108,11 +108,12 @@ The workbench opens at `http://127.0.0.1:5173` and proxies the API to
 `http://127.0.0.1:8000`. Set `ROBOARC_API_TARGET` when the API uses another
 local port. Run the browser workflow gate with `npm run test:e2e`.
 
-For a user-facing view of the recorded TIAGo workflow, open
-`http://127.0.0.1:5173/?review=tiago`. This review view shows the four Workflow
-IR steps, the completed run summary, the Gazebo MP4, and links to the JSONL and
-Rerun artifacts. When the manifest includes Execution Timeline metadata, video
-playback and seeking highlight the active Workflow IR node from the same run.
+For a user-facing view of the recorded demos, run
+`./scripts/serve_review.sh --host 0.0.0.0 --artifacts artifacts` and open
+`http://127.0.0.1:5173/?review`. The catalog lists every valid review artifact
+set below `artifacts/`; select a card to open its Workflow IR, completed run
+summary, recording, JSONL, and Rerun artifacts. Legacy links such as
+`?review=tiago` remain supported.
 On desktop, the Gazebo recording is the larger sticky review surface beside the
 smaller Blockly panel, keeping robot behavior and node highlighting visible
 together.
@@ -123,6 +124,24 @@ sharing on a LAN, start Vite with `--host 0.0.0.0`. Set
 `ROBOARC_ARTIFACT_TARGET` when the artifact server uses another local port.
 The route is driven by `review.json`, not by the TIAGo workflow name: another
 run can reuse it by serving its own schema-valid manifest and artifacts.
+
+GitHub Actions can build the same Review catalog without a simulator. Run the
+`review-site` workflow manually (or push to `main`) to upload a downloadable
+static site and publish the site to GitHub Pages. The workflow regenerates the
+Mock and deterministic simulation runs, validates the recorded TIAGo and
+Reachy artifacts, and checks the static routes. The Pages URL is shown in the
+workflow's deployment environment. The uploaded `roboarc-review-site-*`
+artifact is an offline copy; after downloading and extracting it, run:
+
+```bash
+python -m http.server 8000 --directory review-site
+```
+
+Then open `http://127.0.0.1:8000/?review`.
+
+The first Pages run requires GitHub repository Settings → Pages → Source to be
+set to GitHub Actions. Pull requests upload the site artifact for download but
+do not publish a shared Pages URL.
 
 The OpenAPI UI is available at `/docs`. Core endpoints are under `/api/v1`:
 
