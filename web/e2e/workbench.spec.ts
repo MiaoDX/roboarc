@@ -224,55 +224,66 @@ test("distinguishes supported and incomplete cancellation", async ({
 });
 
 test("renders a canonical review manifest as Blockly", async ({ page }) => {
-  await page.route("**/artifacts/review.json", async (route) => {
+  const reviewManifest = {
+    review_schema_version: 1,
+    workflow: {
+      workflow_schema_version: 1,
+      id: "review-demo",
+      name: "Stable review demo",
+      workflow: {
+        type: "sequence",
+        id: "root",
+        children: [
+          { type: "wait", id: "settle", duration_ms: 250 },
+          {
+            type: "capability",
+            id: "speak",
+            capability: { id: "speech.say", version: 1 },
+            args: { text: "hello" },
+          },
+        ],
+      },
+    },
+    result: {
+      run_id: "run-browser-review",
+      workflow_id: "review-demo",
+      state: "succeeded",
+      error: null,
+      started_at: "2026-09-01T00:00:00Z",
+      finished_at: "2026-09-01T00:00:01Z",
+    },
+    profile_id: "tiago-sim",
+    observation_count: 42,
+    artifacts: {
+      trace: "trace.jsonl",
+      rerun: null,
+      video: "review.mp4",
+    },
+    timeline: {
+      timebase: "utc",
+      media: [
+        {
+          id: "gazebo-camera",
+          artifact: "review.mp4",
+          origin: "2026-09-01T00:00:00Z",
+        },
+      ],
+    },
+  };
+
+  await page.route("**/artifacts/reviews.json", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        review_schema_version: 1,
-        workflow: {
-          workflow_schema_version: 1,
+      body: JSON.stringify([
+        {
           id: "review-demo",
-          name: "Stable review demo",
-          workflow: {
-            type: "sequence",
-            id: "root",
-            children: [
-              { type: "wait", id: "settle", duration_ms: 250 },
-              {
-                type: "capability",
-                id: "speak",
-                capability: { id: "speech.say", version: 1 },
-                args: { text: "hello" },
-              },
-            ],
-          },
+          artifact_root: "",
+          manifest: reviewManifest,
+          workflow: reviewManifest.workflow,
+          profile_id: reviewManifest.profile_id,
+          recorded: true,
         },
-        result: {
-          run_id: "run-browser-review",
-          workflow_id: "review-demo",
-          state: "succeeded",
-          error: null,
-          started_at: "2026-09-01T00:00:00Z",
-          finished_at: "2026-09-01T00:00:01Z",
-        },
-        profile_id: "tiago-sim",
-        observation_count: 42,
-        artifacts: {
-          trace: "trace.jsonl",
-          rerun: null,
-          video: "review.mp4",
-        },
-        timeline: {
-          timebase: "utc",
-          media: [
-            {
-              id: "gazebo-camera",
-              artifact: "review.mp4",
-              origin: "2026-09-01T00:00:00Z",
-            },
-          ],
-        },
-      }),
+      ]),
     });
   });
   await page.route("**/trace.jsonl?run=run-browser-review", async (route) => {
@@ -308,7 +319,7 @@ test("renders a canonical review manifest as Blockly", async ({ page }) => {
     await route.fulfill({ contentType: "video/mp4", body: Buffer.from([]) });
   });
 
-  await page.goto("/?review");
+  await page.goto("/?review=review-demo");
 
   await expect(
     page.getByRole("heading", { name: "Stable review demo" }),
