@@ -142,3 +142,30 @@ Persisting a program counter is insufficient for physical workflow recovery. Saf
 ## Trust model
 
 Capability handlers are trusted code installed by the operator. Workflow documents are declarative and cannot contain arbitrary executable Python, JavaScript, shell commands, or dynamically evaluated expressions.
+
+## Observable traces
+
+Runs can be exported as JSONL observation traces with `roboarc run WORKFLOW --trace trace.jsonl`.
+Each record preserves the runtime event timestamp, run/node/invocation identity, event kind,
+and payload. JSONL is the dependency-free interchange and diagnostic format.
+
+For a native Rerun recording, install the optional integration and export an `.rrd` file:
+
+```bash
+python -m pip install -e ".[rerun]"
+roboarc run examples/workflows/mock-demo.json --rerun run.rrd
+roboarc view run.rrd
+```
+
+The complete dependency-free state-source path uses the deterministic simulation adapter:
+
+```bash
+roboarc simulate examples/workflows/simulation-observable.json \
+  --trace simulation.jsonl --rerun simulation.rrd
+```
+
+Use `roboarc view run.rrd --web` to open the Web Viewer instead. The recording uses an ordered
+`event_seq` timeline and the original event timestamp on a `wall_clock` timeline. All records are
+available as structured JSON text; capability percentages are also logged as scalar series, and
+robot pose/trajectory observations are logged spatially when present. Neither the Rerun SDK nor
+viewer is imported by the runtime core or required for JSONL traces.

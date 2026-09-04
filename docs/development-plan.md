@@ -12,7 +12,8 @@ completed implementation truth belongs in `STATUS.md` and the linked docs.
 | v0.1a | Observable runtime and deterministic MockAdapter | Implemented | Historical summary below |
 | v0.1b | React/Blockly authoring and runtime workbench | Implemented | Historical summary below |
 | v0.1c | First real ROS 2 Action lifecycle proof | Implemented | [v0.1c plan](plans/v0.1c-ros2-action.md) |
-| v0.2 | TIAGo simulation with a narrow useful capability set | Planned | Create after v0.1c evidence |
+| v0.2a | Observable simulation loop and telemetry proof | Implemented | [v0.2a plan](plans/v0.2a-observable-simulation.md) |
+| v0.2b | TIAGo simulation with a narrow useful capability set | Implemented and manually proven | [v0.2a evidence](plans/v0.2a-observable-simulation.md) |
 | v0.3 | Portability proof through a second native interface | Planned | Create after v0.2 evidence |
 | v0.4 | Programming-model hardening driven by real workflows | Deferred | Create only when concrete demand exists |
 | v1.0 | Stable contracts and compatibility policy | Deferred | Requires evidence from prior milestones |
@@ -32,10 +33,13 @@ RoboArc currently has:
 See [STATUS.md](../STATUS.md) for current proof and
 [implementation status](implementation-status.md) for the implemented surface.
 
-## Future Milestone Intent
+## Milestone Direction
 
-- **v0.2:** start with `navigation.goto_location`, `navigation.stop`,
-  `head.look_at`, and `speech.say`; prefer named map locations; defer manipulation.
+- **v0.2a:** established a deterministic Workflow -> Runtime -> telemetry ->
+  Rerun observation loop while keeping the viewer external and optional.
+- **v0.2b:** proved `navigation.goto_location`, `navigation.stop`,
+  `head.look_at`, and `speech.say` against TIAGo in Gazebo; manipulation remains
+  deferred.
 - **v0.3:** add profile selection and compatibility reporting, then run at least
   three semantically shared capabilities through a non-ROS-facing adapter such
   as the Reachy SDK/MuJoCo path.

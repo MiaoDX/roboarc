@@ -13,6 +13,7 @@ from roboarc.runtime.engine import (
 )
 from roboarc.runtime.mock import MockAdapter
 from roboarc.runtime.registry import CapabilityRegistry, RegistryError
+from roboarc.runtime.simulation import DeterministicSimulationAdapter, SimulatedPose
 from roboarc.runtime.validation import validate_workflow
 
 __all__ = [
@@ -20,11 +21,13 @@ __all__ = [
     "CapabilityAdapter",
     "CapabilityInvocation",
     "CapabilityRegistry",
+    "DeterministicSimulationAdapter",
     "MockAdapter",
     "RegistryError",
     "RunHandle",
     "Runtime",
     "RuntimeConfig",
+    "SimulatedPose",
     "WorkflowValidationError",
     "validate_workflow",
 ]

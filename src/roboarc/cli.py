@@ -11,7 +11,13 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from roboarc.contracts import RunState, WorkflowDocument
-from roboarc.runtime import MockAdapter, Runtime, WorkflowValidationError
+from roboarc.runtime import (
+    DeterministicSimulationAdapter,
+    MockAdapter,
+    Runtime,
+    WorkflowValidationError,
+)
+from roboarc.telemetry import Observation, observation_from_event, write_trace
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -31,6 +37,23 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="request cancellation after a deterministic delay",
     )
+    run_parser.add_argument(
+        "--trace", type=Path, default=None, help="write JSONL observation trace"
+    )
+    run_parser.add_argument(
+        "--rerun", type=Path, default=None, help="write an optional Rerun .rrd recording"
+    )
+
+    view_parser = subparsers.add_parser("view", help="open a Rerun .rrd recording")
+    view_parser.add_argument("recording", type=Path)
+    view_parser.add_argument("--web", action="store_true", help="open the Rerun Web Viewer")
+
+    simulate_parser = subparsers.add_parser(
+        "simulate", help="run a workflow against the deterministic simulation adapter"
+    )
+    simulate_parser.add_argument("workflow", type=Path)
+    simulate_parser.add_argument("--trace", type=Path, default=None)
+    simulate_parser.add_argument("--rerun", type=Path, default=None)
 
     serve_parser = subparsers.add_parser("serve", help="start the local HTTP/WebSocket runtime")
     serve_parser.add_argument("--host", default="127.0.0.1")
@@ -51,7 +74,12 @@ async def _validate(path: Path) -> int:
     return 0 if report.valid else 2
 
 
-async def _run(path: Path, cancel_after_ms: int | None) -> int:
+async def _run(
+    path: Path,
+    cancel_after_ms: int | None,
+    trace: Path | None = None,
+    rerun: Path | None = None,
+) -> int:
     adapter = MockAdapter()
     runtime = Runtime(adapter)
     workflow = load_workflow(path)
@@ -74,6 +102,31 @@ async def _run(path: Path, cancel_after_ms: int | None) -> int:
         await asyncio.gather(cancel_task, return_exceptions=True)
         await adapter.wait_for_idle()
 
+    if trace is not None:
+        write_trace(trace, handle.stream.history)
+    if rerun is not None:
+        from roboarc.rerun import write_rrd
+
+        write_rrd(rerun, handle.stream.history)
+    return 0 if result.state is RunState.SUCCEEDED else 1
+
+
+async def _simulate(path: Path, trace: Path | None, rerun: Path | None) -> int:
+    adapter = DeterministicSimulationAdapter()
+    handle = await Runtime(adapter).start(load_workflow(path))
+    result = await handle.result()
+    records: tuple[Observation, ...] = tuple(
+        sorted(
+            (*map(observation_from_event, handle.stream.history), *adapter.telemetry),
+            key=lambda item: item.timestamp,
+        )
+    )
+    if trace is not None:
+        write_trace(trace, records)
+    if rerun is not None:
+        from roboarc.rerun import write_rrd
+
+        write_rrd(rerun, records)
     return 0 if result.state is RunState.SUCCEEDED else 1
 
 
@@ -85,7 +138,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "run":
             if args.cancel_after_ms is not None and args.cancel_after_ms < 0:
                 raise ValueError("--cancel-after-ms must be non-negative")
-            return asyncio.run(_run(args.workflow, args.cancel_after_ms))
+            return asyncio.run(_run(args.workflow, args.cancel_after_ms, args.trace, args.rerun))
+        if args.command == "view":
+            from roboarc.rerun import open_rrd
+
+            return open_rrd(args.recording, web=args.web)
+        if args.command == "simulate":
+            return asyncio.run(_simulate(args.workflow, args.trace, args.rerun))
         if args.command == "serve":
             if not 1 <= args.port <= 65535:
                 raise ValueError("--port must be between 1 and 65535")
@@ -96,7 +155,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except FileNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    except (ValidationError, WorkflowValidationError, ValueError) as exc:
+    except (ValidationError, WorkflowValidationError, ValueError, RuntimeError) as exc:
         if isinstance(exc, WorkflowValidationError):
             print(exc.report.model_dump_json(indent=2), file=sys.stderr)
         else:

@@ -12,7 +12,8 @@ RoboArc composes product-level robot capabilities instead of exposing ROS topics
 
 ## Current status
 
-The repository has completed the **v0.1c ROS 2 Action lifecycle proof**. It contains:
+The repository has completed the **v0.2a observable simulation loop**, including
+the separate TIAGo ROS 2 Jazzy/Gazebo Harmonic proof lane. It contains:
 
 - strict, versioned Pydantic contracts for Workflow IR, project files, capability manifests, robot profiles, validation reports, execution results, and runtime events;
 - checked-in JSON Schemas generated from those contracts;
@@ -21,12 +22,18 @@ The repository has completed the **v0.1c ROS 2 Action lifecycle proof**. It cont
 - a deterministic `MockAdapter` covering success, staged progress, percentage progress, failure, cancellable work, and uncancellable work;
 - a FastAPI service for discovery, validation, run control, event replay, and live WebSocket events;
 - a React/TypeScript/Vite workbench with embedded Blockly authoring, manifest-driven arguments, project save/load, validation, run controls, and runtime telemetry;
-- tests for contracts, runtime state transitions, adapter conformance, cancellation, timeout, CLI behavior, and HTTP/WebSocket integration.
+- backend-neutral pose, trajectory, action-state, and progress observations
+  exported as JSONL and optional native Rerun recordings;
+- a deterministic simulation adapter and observable workflow that require no
+  ROS or simulator installation;
+- tests for contracts, runtime state transitions, adapter conformance, cancellation, timeout, CLI behavior, and HTTP/WebSocket integration;
 - an optional ROS 2 Jazzy/Python 3.12 proof harness that drives an unchanged
-  Workflow IR through the runtime and a genuine ROS Action.
+  Workflow IR through the runtime and a genuine ROS Action; and
+- a pinned TIAGo Jazzy/Gazebo Harmonic overlay and four-capability manual lane
+  that runs the same observation contract against a live simulator stack.
 
-The ROS harness is test-only and does not add ROS to the core package. A
-production robot adapter remains deferred to the v0.2 TIAGo milestone.
+The ROS and TIAGo lanes remain outside the core package and always-on CI. They
+are integration proofs, not supported production robot adapters.
 
 ## Quick start
 
@@ -54,6 +61,20 @@ Validate and run the included workflow against the mock robot:
 roboarc validate examples/workflows/mock-demo.json
 roboarc run examples/workflows/mock-demo.json
 ```
+
+Run the deterministic observable simulation and produce a native Rerun recording:
+
+```bash
+python -m pip install -e ".[rerun]"
+roboarc simulate examples/workflows/simulation-observable.json \
+  --trace simulation.jsonl --rerun simulation.rrd
+roboarc view simulation.rrd
+```
+
+The separate TIAGo/Gazebo manual lane is documented in
+[`docker/tiago-jazzy/README.md`](docker/tiago-jazzy/README.md). The repository
+builds its pinned Jazzy/Harmonic overlay and runs the four-capability workflow
+to correlated JSONL and Rerun artifacts.
 
 Start the local runtime API:
 
@@ -102,7 +123,8 @@ Runtime events contain a per-run monotonic `seq`, so clients can reconnect with 
 
 ```text
 src/roboarc/contracts/   Versioned external contracts
-src/roboarc/runtime/     Validation, execution, events, and MockAdapter
+src/roboarc/runtime/     Validation, execution, events, MockAdapter, and deterministic simulation
+src/roboarc/telemetry.py Backend-neutral pose, trajectory, action, and progress observations
 src/roboarc/api/         FastAPI HTTP/WebSocket transport
 schemas/                 Generated JSON Schemas
 examples/workflows/      Executable Workflow IR examples

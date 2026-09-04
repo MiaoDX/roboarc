@@ -1,6 +1,6 @@
 # Implementation Status
 
-## Completed through v0.1c
+## Completed through v0.2a
 
 ### Contracts
 
@@ -56,7 +56,7 @@ The FastAPI service supports capability discovery, validation, start/cancel cont
 The test suite covers contract strictness, generated schema drift, registry conformance, argument validation, ordered events, fail-fast behavior, cancellation acknowledgement, cancellation incompleteness, timeout cleanup, adapter output violations, CLI execution, and HTTP/WebSocket behavior.
 
 GitHub Actions runs the Python suite on 3.11, 3.12, and 3.13. The Web job runs
-Prettier, ESLint, TypeScript, 23 unit tests, schema drift checks, a production
+Prettier, ESLint, TypeScript, 24 unit tests, schema drift checks, a production
 build, seven Chromium workflows, and the dependency audit.
 
 ### ROS 2 Action lifecycle proof
@@ -68,6 +68,19 @@ terminal cancellation, bounded timeout cleanup, and incomplete cancellation.
 The harness and its dedicated CI workflow are optional; core package metadata
 and always-on Python/Web checks remain ROS-free.
 
+### Observable simulation and TIAGo proof
+
+The telemetry vocabulary covers pose, trajectory, action state, capability
+progress, timestamps, and run/node/invocation identity. The deterministic
+simulation adapter exports correlated JSONL and optional native Rerun
+recordings without ROS or simulator dependencies.
+
+The separate TIAGo manual lane builds a pinned ROS 2 Jazzy/Gazebo Harmonic
+overlay and maps `navigation.goto_location`, `navigation.stop`, `head.look_at`,
+and `speech.say` onto Nav2, controllers, and a speech transport seam. Its
+four-node workflow completed successfully with correlated TF-derived pose and
+trajectory telemetry; the native Rerun recording passed verification.
+
 ## Deliberately not implemented
 
 - `if`, general expressions, variables, and output references;
@@ -77,12 +90,14 @@ and always-on Python/Web checks remain ROS-free.
 - persistent or restartable runs;
 - authentication, multi-user authorization, databases, or cloud services;
 - arbitrary code execution;
-- production ROS 2, TIAGo, Reachy 2, simulator, or hardware adapters.
+- production ROS 2, Reachy 2, or hardware adapters. A deterministic simulation
+  adapter and a proven TIAGo ROS/Gazebo manual adapter exist, but the latter is
+  not a supported production adapter.
 
 ## Recommended continuation
 
-### TIAGo integration
+### Portability proof
 
-The completed Action proof permits the next adapter to target TIAGo
-navigation/head behavior. Keep simulator tests outside the always-on core CI
-suite.
+Proceed to v0.3 profile selection and compatibility reporting, then prove at
+least three semantically shared capabilities through a second native interface.
+Keep simulator proofs outside always-on core CI.

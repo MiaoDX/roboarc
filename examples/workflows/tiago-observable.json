@@ -1,0 +1,35 @@
+{
+  "workflow_schema_version": 1,
+  "id": "tiago-observable",
+  "name": "TIAGo observable welcome",
+  "workflow": {
+    "id": "root",
+    "type": "sequence",
+    "children": [
+      {
+        "id": "go-reception",
+        "type": "capability",
+        "capability": {"id": "navigation.goto_location", "version": 1},
+        "args": {"target": "reception"}
+      },
+      {
+        "id": "stop-at-reception",
+        "type": "capability",
+        "capability": {"id": "navigation.stop", "version": 1},
+        "args": {}
+      },
+      {
+        "id": "look-at-visitor",
+        "type": "capability",
+        "capability": {"id": "head.look_at", "version": 1},
+        "args": {"frame": "base_footprint", "x": 1.5, "y": 0.0, "z": 1.6}
+      },
+      {
+        "id": "welcome-visitor",
+        "type": "capability",
+        "capability": {"id": "speech.say", "version": 1},
+        "args": {"text": "Welcome to RoboArc."}
+      }
+    ]
+  }
+}

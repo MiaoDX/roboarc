@@ -1,0 +1,88 @@
+diff --git a/pmb2_description/urdf/base/base.gazebo.xacro b/pmb2_description/urdf/base/base.gazebo.xacro
+index 225a086..0adf888 100644
+--- a/pmb2_description/urdf/base/base.gazebo.xacro
++++ b/pmb2_description/urdf/base/base.gazebo.xacro
+@@ -18,7 +18,7 @@
+ <robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+   <!-- MACRO DEFINITION-->
+-  <xacro:macro name="base_gazebo" params="name">
++  <xacro:macro name="base_gazebo" params="name gazebo_version:=classic">
+
+     <!-- Materials -->
+     <gazebo reference="${name}_link">
+@@ -38,17 +38,19 @@
+     </gazebo>
+
+     <!-- Odometry plugin for ground truth -->
+-    <gazebo>
+-      <plugin filename="libgazebo_world_odometry.so" name="gazebo_ros_odometry">
+-        <ros>
+-          <namespace>${namespace}</namespace>
+-        </ros>
+-        <frame_name>world</frame_name>
+-        <body_name>base_footprint</body_name>
+-        <topic_name>ground_truth_odom</topic_name>
+-        <update_rate>100.0</update_rate>
+-      </plugin>
+-    </gazebo>
++    <xacro:if value="${gazebo_version == 'classic'}">
++      <gazebo>
++        <plugin filename="libgazebo_world_odometry.so" name="gazebo_ros_odometry">
++          <ros>
++            <namespace>${namespace}</namespace>
++          </ros>
++          <frame_name>world</frame_name>
++          <body_name>base_footprint</body_name>
++          <topic_name>ground_truth_odom</topic_name>
++          <update_rate>100.0</update_rate>
++        </plugin>
++      </gazebo>
++    </xacro:if>
+
+   </xacro:macro>
+
+diff --git a/pmb2_description/urdf/base/base.urdf.xacro b/pmb2_description/urdf/base/base.urdf.xacro
+index d9c3616..616aa47 100644
+--- a/pmb2_description/urdf/base/base.urdf.xacro
++++ b/pmb2_description/urdf/base/base.urdf.xacro
+@@ -44,7 +44,7 @@
+   <xacro:include filename="$(find pmb2_description)/urdf/objects/antenna.urdf.xacro"/>
+
+   <!-- MACRO DEFINITION-->
+-  <xacro:macro name="base" params="name">
++  <xacro:macro name="base" params="name gazebo_version:=classic">
+
+     <!-- Base -->
+     <link name="${name}_link">
+@@ -132,7 +132,7 @@
+     <xacro:caster side="back_left" radius="${caster_radius}" width="${caster_width}" separation_x="${-caster_separation_x}" separation_y="${-caster_separation_y}" offset_x="${caster_offset_x}" offset_y="${caster_offset_y}" offset_z="${caster_offset_z}" parent="${name}_link"/>
+
+     <!-- Gazebo config-->
+-    <xacro:base_gazebo name="${name}"/>
++    <xacro:base_gazebo name="${name}" gazebo_version="${gazebo_version}"/>
+
+   </xacro:macro>
+
+diff --git a/pmb2_description/urdf/base/base_sensors.urdf.xacro b/pmb2_description/urdf/base/base_sensors.urdf.xacro
+index 8495915..1b17d7f 100644
+--- a/pmb2_description/urdf/base/base_sensors.urdf.xacro
++++ b/pmb2_description/urdf/base/base_sensors.urdf.xacro
+@@ -33,7 +33,7 @@
+   <xacro:include filename="$(find pal_urdf_utils)/urdf/interaction_sensors/microphone.urdf.xacro"/>
+
+   <!-- MACRO DEFINITION -->
+-  <xacro:macro name="base_sensors" params="name laser_model:=sick-571 has_sonars:=false has_microphone:=false" >
++  <xacro:macro name="base_sensors" params="name laser_model:=sick-571 has_sonars:=false has_microphone:=false gazebo_version:=classic" >
+
+     <!-- IMU -->
+     <xacro:imu_sensor name="${name}_imu" parent="${name}_link" update_rate="100.0">
+@@ -120,7 +120,7 @@
+
+     </xacro:if>
+
+-    <xacro:base name="${name}"/>
++    <xacro:base name="${name}" gazebo_version="${gazebo_version}"/>
+
+   </xacro:macro>
+
