@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import math
 import re
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
-from typing_extensions import Annotated
 
 IDENTIFIER_PATTERN = r"^[A-Za-z][A-Za-z0-9._-]{0,127}$"
 FIELD_NAME_PATTERN = r"^[A-Za-z_][A-Za-z0-9_]{0,63}$"

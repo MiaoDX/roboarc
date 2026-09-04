@@ -28,7 +28,7 @@ RoboArc v0.x is not intended to be:
 
 ```text
 Authoring
-  Blockly       Flow UI (later)       AI/LLM (later)
+  React shell + Blockly       Flow UI (later)       AI/LLM (later)
       \              |                   /
        +-------------+------------------+
                      |
@@ -53,7 +53,10 @@ Authoring
 
 ### Authoring layer
 
-Blockly is the first authoring surface. Its workspace serialization is UI state, not executable source of truth. A future node graph or AI-assisted path must compile to the same validated Workflow IR.
+The React workbench owns the browser workflow and embeds Blockly as its visual
+editor. Blockly workspace serialization is UI state, not executable source of
+truth. The deterministic compiler maps supported blocks to validated Workflow
+IR; future node graphs or AI-assisted paths must use the same IR boundary.
 
 ### Workflow IR
 
@@ -93,7 +96,9 @@ CapabilityInvocation lifecycle
 MockAdapter
 ```
 
-The Web editor is the next slice. It consumes the same JSON Schemas and API rather than introducing a second execution model.
+The Web editor consumes the same JSON Schemas and API rather than introducing a
+second execution model. It uses HTTP for discovery, validation, snapshots, and
+run control, and a reconnecting WebSocket client for replay and live events.
 
 ## Communication
 
@@ -124,7 +129,7 @@ It does not claim “write once, run everywhere.”
 
 The architecture leaves room for, but does not require in the current core:
 
-- React/Blockly and future graph-oriented authoring;
+- alternative graph-oriented and AI-assisted authoring surfaces;
 - typed values, references, conditions, and bounded loops;
 - `parallel_all`, resource arbitration, and pre/postconditions;
 - reusable subflows;

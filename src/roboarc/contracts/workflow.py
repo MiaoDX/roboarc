@@ -37,7 +37,7 @@ class CapabilityNode(NodeBase):
 
 class SequenceNode(NodeBase):
     type: Literal["sequence"] = "sequence"
-    children: tuple["WorkflowNode", ...] = Field(min_length=1)
+    children: tuple[WorkflowNode, ...] = Field(min_length=1)
 
 
 WorkflowNode: TypeAlias = Annotated[
@@ -57,7 +57,7 @@ class WorkflowDocument(ContractModel):
     workflow: WorkflowNode
 
     @model_validator(mode="after")
-    def node_ids_and_shape_are_bounded(self) -> "WorkflowDocument":
+    def node_ids_and_shape_are_bounded(self) -> WorkflowDocument:
         ids: set[str] = set()
         count = 0
 
