@@ -1,0 +1,92 @@
+name: review-site
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: review-site-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Review site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install runtime and review dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,rerun]"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build Web app
+        working-directory: web
+        run: |
+          npm ci
+          ROBOARC_REVIEW_BASE=./ npm run build
+
+      - name: Build and validate static Review site
+        run: |
+          python scripts/build_review_bundle.py --web-dist web/dist --output review-site
+          for artifact in review-site/artifacts/*/review.json; do
+            python scripts/validate_review_artifacts.py "$(dirname "$artifact")"
+          done
+          python -m http.server 4173 --directory review-site >/tmp/roboarc-review-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          sleep 1
+          curl --fail --silent http://127.0.0.1:4173/?review >/dev/null
+          curl --fail --silent http://127.0.0.1:4173/artifacts/reviews.json >/dev/null
+
+      - name: Upload downloadable Review site
+        uses: actions/upload-artifact@v4
+        with:
+          name: roboarc-review-site-${{ github.sha }}
+          path: review-site
+          if-no-files-found: error
+
+      - name: Prepare GitHub Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: review-site
+
+  deploy:
+    name: Publish Review site
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

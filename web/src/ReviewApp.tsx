@@ -17,6 +17,7 @@ import {
   activeNodeAt,
   nodeIntervals,
   parseTrace,
+  parseReviewCatalog,
   parseReviewManifest,
   workflowSteps,
 } from "./review";
@@ -30,7 +31,11 @@ import {
 import "./review.css";
 import "./review-blockly.css";
 
-const artifactRoot = "/artifacts";
+const appBase = "./";
+const artifactsBase = "./artifacts";
+const isStaticReview =
+  typeof document !== "undefined" &&
+  document.querySelector('meta[name="roboarc-default-view"]') !== null;
 
 export function nodeSummary(
   node: WorkflowNode,
@@ -96,7 +101,7 @@ export function nodeSummary(
   };
 }
 
-export default function ReviewApp() {
+export default function ReviewApp({ demoId }: { demoId: string }) {
   const blockHost = React.useRef<HTMLDivElement>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const workspaceRef = React.useRef<Blockly.WorkspaceSvg | null>(null);
@@ -107,15 +112,37 @@ export default function ReviewApp() {
   >([]);
   const [activeNodeId, setActiveNodeId] = React.useState<string | null>(null);
   const [videoDimensions, setVideoDimensions] = React.useState<string>("H.264");
+  const [artifactRoot, setArtifactRoot] = React.useState(artifactsBase);
 
   React.useEffect(() => {
-    fetch(`${artifactRoot}/review.json`, { cache: "no-store" })
+    fetch(`${artifactsBase}/reviews.json`, { cache: "no-store" })
       .then(async (response) => {
-        if (!response.ok)
-          throw new Error(
-            `Review manifest returned ${String(response.status)}`,
-          );
-        return parseReviewManifest(await response.json());
+        if (!response.ok) {
+          const legacy = await fetch(`${artifactsBase}/review.json`, {
+            cache: "no-store",
+          });
+          if (!legacy.ok)
+            throw new Error(
+              `Review manifest returned ${String(legacy.status)}`,
+            );
+          return parseReviewManifest(await legacy.json());
+        }
+        const entries = parseReviewCatalog(await response.json());
+        const entry = entries.find(
+          (candidate) =>
+            candidate.id === demoId ||
+            (demoId === "tiago" &&
+              candidate.manifest?.profile_id === "tiago-sim") ||
+            (demoId === "reachy" &&
+              candidate.manifest?.profile_id === "reachy2-sim"),
+        );
+        if (!entry) throw new Error(`Review demo not found: ${demoId}`);
+        setArtifactRoot(
+          entry.artifact_root
+            ? `${artifactsBase}/${entry.artifact_root}`
+            : artifactsBase,
+        );
+        return parseReviewManifest(entry.manifest);
       })
       .then(setManifest)
       .catch((reason: unknown) => {
@@ -125,7 +152,7 @@ export default function ReviewApp() {
             : "Review manifest unavailable",
         );
       });
-  }, []);
+  }, [demoId]);
 
   React.useEffect(() => {
     if (!manifest) return;
@@ -237,9 +264,16 @@ export default function ReviewApp() {
           <strong>RoboArc</strong>
           <span>Workflow visual review</span>
         </div>
-        <a href="/" className="review-link">
-          Open Workbench <ExternalLink size={15} />
-        </a>
+        <nav className="review-nav">
+          <a href={`${appBase}?review`} className="review-link">
+            All demos
+          </a>
+          {!isStaticReview && (
+            <a href={appBase} className="review-link">
+              Open Workbench <ExternalLink size={15} />
+            </a>
+          )}
+        </nav>
       </header>
       <section className="review-hero">
         <div>

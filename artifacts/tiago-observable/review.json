@@ -1,0 +1,97 @@
+{
+  "review_schema_version": 1,
+  "workflow": {
+    "workflow_schema_version": 1,
+    "id": "tiago-observable",
+    "name": "TIAGo reception greeting",
+    "profile_id": null,
+    "workflow": {
+      "id": "root",
+      "type": "sequence",
+      "children": [
+        {
+          "id": "go-reception",
+          "type": "capability",
+          "capability": {
+            "id": "navigation.goto_location",
+            "version": 1
+          },
+          "args": {
+            "target": "reception"
+          }
+        },
+        {
+          "id": "stop-at-reception",
+          "type": "capability",
+          "capability": {
+            "id": "navigation.stop",
+            "version": 1
+          },
+          "args": {}
+        },
+        {
+          "id": "look-ahead",
+          "type": "capability",
+          "capability": {
+            "id": "head.look_at",
+            "version": 1
+          },
+          "args": {
+            "frame": "base_footprint",
+            "x": 1.5,
+            "y": 0.0,
+            "z": 1.6
+          }
+        },
+        {
+          "id": "greet-at-reception",
+          "type": "capability",
+          "capability": {
+            "id": "speech.say",
+            "version": 1
+          },
+          "args": {
+            "text": "Welcome to RoboArc."
+          }
+        },
+        {
+          "id": "community-note",
+          "type": "capability",
+          "capability": {
+            "id": "community.say",
+            "version": 1
+          },
+          "args": {
+            "text": "Community extension ready."
+          }
+        }
+      ]
+    }
+  },
+  "result": {
+    "run_id": "run-426b266c4d2649d69b10643cec39c4d4",
+    "workflow_id": "tiago-observable",
+    "profile_id": "tiago-sim",
+    "state": "succeeded",
+    "error": null,
+    "started_at": "2026-09-04T02:09:12.930016Z",
+    "finished_at": "2026-09-04T02:09:19.402864Z"
+  },
+  "profile_id": "tiago-sim",
+  "observation_count": 1374,
+  "artifacts": {
+    "trace": "tiago-observable.jsonl",
+    "rerun": "tiago-observable.rrd",
+    "video": "gazebo-review.mp4"
+  },
+  "timeline": {
+    "timebase": "utc",
+    "media": [
+      {
+        "id": "gazebo-camera",
+        "artifact": "gazebo-review.mp4",
+        "origin": "2026-09-04T02:09:12.105924190Z"
+      }
+    ]
+  }
+}

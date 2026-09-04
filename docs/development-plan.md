@@ -15,7 +15,7 @@ completed implementation truth belongs in `STATUS.md` and the linked docs.
 | v0.2a | Observable simulation loop and telemetry proof | Implemented | [v0.2a plan](plans/v0.2a-observable-simulation.md) |
 | v0.2b | TIAGo simulation with a narrow useful capability set | Implemented and manually proven | [v0.2a evidence](plans/v0.2a-observable-simulation.md) |
 | v0.3 | Reachy 2 SDK/MuJoCo visual portability proof | Implemented and manually proven | [v0.3 plan](plans/v0.3-portability.md) |
-| v0.4 | Community Task Composition Slice | Preflight ready | [composition plan](plans/community-task-composition.md) |
+| v0.4 | Community Task Composition Slice | Implemented and manually proven | [composition plan](plans/community-task-composition.md) |
 | v1.0 | Stable release decision, if evidence justifies it | Unscheduled | No plan until real community usage stabilizes the contracts |
 
 ## Implemented Foundation
@@ -45,9 +45,9 @@ See [STATUS.md](../STATUS.md) for current proof and
   the official MuJoCo simulation. The self-built minimal image produced
   synchronized video and Workflow IR evidence; TIAGo and Reachy 2 retain
   profile-specific semantic capabilities and need not share a demo workflow.
-- **v0.4:** prove a small, TIAGo-first task-composition journey with the
+- **v0.4:** completed a small, TIAGo-first task-composition journey with the
   existing `sequence`, `wait`, and `capability` nodes. The complete scope,
-  cuts, and stop gates live in
+  evidence, cuts, and stop gates live in
   [`docs/plans/community-task-composition.md`](plans/community-task-composition.md).
 - **v1.0:** not a committed feature phase. Consider a stable release only if
   real community usage produces enough adapter and contract evidence to justify

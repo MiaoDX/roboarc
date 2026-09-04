@@ -1,0 +1,77 @@
+{
+  "review_schema_version": 1,
+  "workflow": {
+    "workflow_schema_version": 1,
+    "id": "tiago-reception-greeting",
+    "name": "Reception greeting",
+    "profile_id": "tiago-sim",
+    "workflow": {
+      "id": "root",
+      "type": "sequence",
+      "children": [
+        {
+          "id": "go-reception",
+          "type": "capability",
+          "capability": {
+            "id": "navigation.goto_location",
+            "version": 1
+          },
+          "args": {
+            "target": "reception"
+          }
+        },
+        {
+          "id": "look-ahead",
+          "type": "capability",
+          "capability": {
+            "id": "head.look_at",
+            "version": 1
+          },
+          "args": {
+            "frame": "base_footprint",
+            "x": 1.5,
+            "y": 0.0,
+            "z": 1.6
+          }
+        },
+        {
+          "id": "greet",
+          "type": "capability",
+          "capability": {
+            "id": "speech.say",
+            "version": 1
+          },
+          "args": {
+            "text": "Welcome to RoboArc."
+          }
+        }
+      ]
+    }
+  },
+  "result": {
+    "run_id": "run-473ff846aed440a3a6a4c7fbaf6c61dc",
+    "workflow_id": "tiago-reception-greeting",
+    "profile_id": "tiago-sim",
+    "state": "succeeded",
+    "error": null,
+    "started_at": "2026-09-03T10:22:00.292640Z",
+    "finished_at": "2026-09-03T10:22:06.199784Z"
+  },
+  "profile_id": "tiago-sim",
+  "observation_count": 1288,
+  "artifacts": {
+    "trace": "tiago-observable.jsonl",
+    "rerun": "tiago-observable.rrd",
+    "video": "community-composition.mp4"
+  },
+  "timeline": {
+    "timebase": "utc",
+    "media": [
+      {
+        "id": "gazebo-camera",
+        "artifact": "community-composition.mp4",
+        "origin": "2026-09-03T10:21:59.521503497Z"
+      }
+    ]
+  }
+}

@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
     },
   };
   return {
+    base: process.env.ROBOARC_REVIEW_BASE ?? "/",
     plugins: [react()],
     test: {
       include: ["src/**/*.test.ts"],

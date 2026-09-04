@@ -1,0 +1,90 @@
+{
+  "review_schema_version": 1,
+  "workflow": {
+    "workflow_schema_version": 1,
+    "id": "tiago-look-and-say",
+    "name": "Look and say",
+    "profile_id": "tiago-sim",
+    "workflow": {
+      "id": "root",
+      "type": "sequence",
+      "children": [
+        {
+          "id": "startup-settle",
+          "type": "wait",
+          "duration_ms": 3000
+        },
+        {
+          "id": "look-left",
+          "type": "capability",
+          "capability": {
+            "id": "head.look_at",
+            "version": 1
+          },
+          "args": {
+            "frame": "base_footprint",
+            "x": 1.2,
+            "y": 0.8,
+            "z": 1.5
+          }
+        },
+        {
+          "id": "say",
+          "type": "capability",
+          "capability": {
+            "id": "speech.say",
+            "version": 1
+          },
+          "args": {
+            "text": "I am looking left."
+          }
+        },
+        {
+          "id": "pause",
+          "type": "wait",
+          "duration_ms": 500
+        },
+        {
+          "id": "look-right",
+          "type": "capability",
+          "capability": {
+            "id": "head.look_at",
+            "version": 1
+          },
+          "args": {
+            "frame": "base_footprint",
+            "x": 1.2,
+            "y": -0.8,
+            "z": 1.5
+          }
+        }
+      ]
+    }
+  },
+  "result": {
+    "run_id": "run-7923a8343f1c4547abfda5239167cd68",
+    "workflow_id": "tiago-look-and-say",
+    "profile_id": "tiago-sim",
+    "state": "succeeded",
+    "error": null,
+    "started_at": "2026-09-04T02:08:05.040328Z",
+    "finished_at": "2026-09-04T02:08:13.152319Z"
+  },
+  "profile_id": "tiago-sim",
+  "observation_count": 25,
+  "artifacts": {
+    "trace": "tiago-observable.jsonl",
+    "rerun": "tiago-observable.rrd",
+    "video": "gazebo-review.mp4"
+  },
+  "timeline": {
+    "timebase": "utc",
+    "media": [
+      {
+        "id": "gazebo-camera",
+        "artifact": "gazebo-review.mp4",
+        "origin": "2026-09-04T02:08:03.913735145Z"
+      }
+    ]
+  }
+}

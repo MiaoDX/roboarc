@@ -1,0 +1,57 @@
+{
+  "review_schema_version": 1,
+  "workflow": {
+    "workflow_schema_version": 1,
+    "id": "mock-demo",
+    "name": "Mock runtime demo",
+    "profile_id": null,
+    "workflow": {
+      "id": "root",
+      "type": "sequence",
+      "children": [
+        {
+          "id": "settle",
+          "type": "wait",
+          "duration_ms": 25
+        },
+        {
+          "id": "hello",
+          "type": "capability",
+          "capability": {
+            "id": "demo.instant_success",
+            "version": 1
+          },
+          "args": {
+            "value": "hello"
+          }
+        }
+      ]
+    }
+  },
+  "result": {
+    "run_id": "run-f5cbd5203dd348ea9bc4495e25549336",
+    "workflow_id": "mock-demo",
+    "profile_id": "mock",
+    "state": "succeeded",
+    "error": null,
+    "started_at": "2026-09-04T02:04:49.832410Z",
+    "finished_at": "2026-09-04T02:04:49.859037Z"
+  },
+  "profile_id": "mock",
+  "observation_count": 8,
+  "artifacts": {
+    "trace": "trace.jsonl",
+    "rerun": "trace.rrd",
+    "video": "runtime-replay.mp4"
+  },
+  "timeline": {
+    "timebase": "utc",
+    "media": [
+      {
+        "id": "runtime-replay",
+        "artifact": "runtime-replay.mp4",
+        "origin": "2026-09-04T02:04:49.832410+00:00"
+      }
+    ]
+  }
+}

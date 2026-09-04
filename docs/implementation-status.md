@@ -90,9 +90,10 @@ trajectory telemetry; the native Rerun recording passed verification.
 The minimal Reachy 2 lane self-builds Pollen Robotics' open-source MuJoCo fake
 SDK and keeps vendor details outside the core contracts/runtime packages. The
 completed review artifact uses the `reachy2-sim` profile and a succeeded
-`reachy-observable` workflow with 968 trace observations and a 1280x720 H.264
-MuJoCo recording. Its image digest, base image, upstream commits, and MuJoCo
-version are recorded in the manifest. Validate the complete artifact set with:
+`reachy-observable` workflow with 968 trace observations and an 852x480 H.264
+MuJoCo recording cropped to the actual rendered viewport. Its image digest,
+base image, upstream commits, and MuJoCo version are recorded in the manifest.
+Validate the complete artifact set with:
 
 ```bash
 python scripts/validate_review_artifacts.py artifacts/reachy-proof-final
@@ -121,7 +122,7 @@ hardware adapter.
 
 ### Community task composition
 
-The next proposed slice is the TIAGo-first
+The completed TIAGo-first
 [Community Task Composition plan](plans/community-task-composition.md). It uses
 the existing `sequence`, `wait`, and `capability` nodes to prove that a
 developer can create, run, save, import, and review a task that is not a canned
