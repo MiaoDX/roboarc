@@ -79,7 +79,7 @@ Go to Table
 
 The first TIAGo milestone does not need all three. Navigation + head + speech is enough to validate the adapter boundary before adding manipulation.
 
-## 3. Reachy 2: portability/showcase candidate
+## 3. Reachy 2: selected portability/showcase target
 
 Reachy 2 is a strong second robot because its software stack exposes a modern Python SDK and gRPC/ROS 2 bridge, while its MuJoCo ecosystem includes mobile-base, arm, camera, and manipulation-oriented scenes.
 
@@ -94,6 +94,18 @@ Useful upstream projects:
 The tutorials explicitly support running examples against MuJoCo as well as the real robot. The MuJoCo assets include table, fruit-sorting, and kitchen scenes.
 
 Reachy 2 is particularly valuable for demonstrating that RoboArc does not require ROS-facing capability handlers: the adapter can target the higher-level SDK.
+
+For v0.3, the official Docker image's MuJoCo + SDK server path is the product
+proof. Its browser display is recorded into the same manifest-backed,
+time-aligned review workflow used for TIAGo. The official Gazebo/RViz path
+remains available for engineering diagnosis but is not a second v0.3 product
+lane. The image and dependencies must be pinned, and real Reachy hardware is not
+required.
+
+The Reachy adapter registers only capabilities it actually supports. Its demo
+does not need to reproduce the TIAGo workflow: portability is demonstrated by
+using the same RoboArc contracts and observable execution path with a
+profile-appropriate capability set.
 
 ## Why not start with TurtleBot?
 

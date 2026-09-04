@@ -14,7 +14,7 @@ from roboarc.runtime.engine import (
 from roboarc.runtime.mock import MockAdapter
 from roboarc.runtime.registry import CapabilityRegistry, RegistryError
 from roboarc.runtime.simulation import DeterministicSimulationAdapter, SimulatedPose
-from roboarc.runtime.validation import validate_workflow
+from roboarc.runtime.validation import compatibility_report, validate_workflow
 
 __all__ = [
     "CancellationDisposition",
@@ -29,5 +29,6 @@ __all__ = [
     "RuntimeConfig",
     "SimulatedPose",
     "WorkflowValidationError",
+    "compatibility_report",
     "validate_workflow",
 ]

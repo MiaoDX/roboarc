@@ -124,6 +124,7 @@ GET  /api/v1/health
 GET  /api/v1/profile
 GET  /api/v1/capabilities
 POST /api/v1/workflows/validate
+POST /api/v1/workflows/compatibility
 POST /api/v1/runs
 GET  /api/v1/runs/{run_id}
 POST /api/v1/runs/{run_id}/cancel
@@ -132,6 +133,42 @@ WS   /api/v1/runs/{run_id}/events?after_seq=N
 ```
 
 HTTP handles discovery, validation, control, snapshots, and replay. WebSocket provides live events after replaying missed history.
+
+## Profiles and compatibility preflight
+
+`roboarc serve --profile PROFILE_ID` selects one adapter at process startup.
+The supported core profiles are `mock` and `deterministic-simulation`; the
+isolated adapters provide `tiago-sim` and `reachy2-sim`. `GET /api/v1/profile`
+reports the stable active profile. `reachy2-sim` connects to the optional
+Pollen MuJoCo SDK endpoint selected by `REACHY_HOST` (default `127.0.0.1`).
+
+Workflow v1 may optionally carry `profile_id`, and manifest v1 may optionally
+carry `compatible_profiles`. Compatibility reports are keyed by capability
+node ID and retain the node's exact `{id, version}` reference. Each entry has
+one status and machine-readable reason:
+
+- `compatible`: `exact_capability_match` or `declared_profile_compatibility`;
+- `missing`: `capability_missing`;
+- `incompatible`: `capability_version_mismatch`;
+- `unknown`: `profile_compatibility_unknown`.
+
+All non-compatible statuses fail validation before the adapter is invoked.
+Legacy workflows without `profile_id` retain exact-reference behavior. Every
+started run pins the active `profile_id` in its start response, snapshot,
+terminal result, and `run.started` event metadata.
+
+### Reachy 2 capability matrix
+
+| Capability | Inputs and units | Output | Progress | Cancellation | Native mapping | Visual assumption |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reachy.arm.pose_joints@1` | `side` (`left`/`right`), seven named joint angles in degrees, `duration_ms` | selected `side`, `completed` | client-side estimated percent from deterministic interpolation steps | unsupported | `l_arm`/`r_arm.get_present_positions()`, `set_goal_positions()`, then `send_goal_positions()` | changing arm joint targets is visible in the pinned MuJoCo table scene |
+
+The adapter treats each arm as the logical `arm_motion` resource. It does not
+claim native completion feedback: success means every interpolation target was
+accepted by the SDK-facing object without an exception. The upstream operation
+has no reliable stop acknowledgement, so the capability is deliberately
+non-cancellable. The always-on fake exposes the same SDK method shape; the
+pinned MuJoCo lane remains the product-level visual proof.
 
 ## Durability
 

@@ -11,6 +11,12 @@ from roboarc.contracts.capability import (
     ValueSpec,
     ValueType,
 )
+from roboarc.contracts.compatibility import (
+    CompatibilityReason,
+    CompatibilityReport,
+    CompatibilityStatus,
+    NodeCompatibility,
+)
 from roboarc.contracts.events import (
     CapabilityResult,
     ErrorCode,
@@ -43,11 +49,15 @@ __all__ = [
     "CapabilityNode",
     "CapabilityRef",
     "CapabilityResult",
+    "CompatibilityReason",
+    "CompatibilityReport",
+    "CompatibilityStatus",
     "EditorState",
     "ErrorCode",
     "EventType",
     "ExecutionError",
     "ExecutionTraits",
+    "NodeCompatibility",
     "NodeResult",
     "NodeState",
     "ProgressMode",

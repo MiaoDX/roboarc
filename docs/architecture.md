@@ -70,6 +70,14 @@ A capability is a product-level behavior such as `navigation.goto_location`, `he
 
 The runtime validates and executes Workflow IR, starts adapter invocations, enforces manifest deadlines, propagates cancellation requests, validates successful outputs, and emits ordered structured events.
 
+One adapter profile is selected at process startup and owns the runtime for
+that process. The runtime reports this active profile but does not provide a
+per-run adapter switch. Before invocation it produces a deterministic,
+node-keyed compatibility report. Exact references on the same or unpinned
+profile are compatible; cross-profile references require the active manifest
+to explicitly name the source profile. Missing IDs, version mismatches, and
+undeclared cross-profile semantics are reported separately and block the run.
+
 The current implementation uses Python, `asyncio`, Pydantic, FastAPI, HTTP, and WebSocket. The runtime core imports no ROS-specific types.
 
 ### Robot adapters
@@ -123,7 +131,12 @@ Authentication and multi-user authorization are deferred, and the development se
 
 ## Portability boundary
 
-Capability names alone do not guarantee semantic equivalence. Portability depends on compatible contracts for frames, units, maps, preconditions, payload/workspace constraints, timing, cancellation, and result semantics.
+Capability names alone do not guarantee semantic equivalence. The optional
+v1 manifest `compatible_profiles` field makes only a narrow, explicit claim
+about an exact capability version. Absent declarations remain `unknown` rather
+than inferred compatible. Richer dimensions such as frames, units, maps,
+preconditions, payload/workspace constraints, timing, cancellation, and result
+semantics are not inferred by the runtime.
 
 RoboArc therefore aims for:
 

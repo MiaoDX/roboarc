@@ -15,6 +15,7 @@ from roboarc.api.models import (
 )
 from roboarc.contracts import (
     CapabilityManifest,
+    CompatibilityReport,
     RobotProfile,
     RuntimeEvent,
     ValidationReport,
@@ -77,6 +78,10 @@ def create_app(
     async def validate_workflow_endpoint(workflow: WorkflowDocument) -> ValidationReport:
         return runtime.validate(workflow)
 
+    @app.post(f"{API_PREFIX}/workflows/compatibility", response_model=CompatibilityReport)
+    async def compatibility_endpoint(workflow: WorkflowDocument) -> CompatibilityReport:
+        return runtime.compatibility(workflow)
+
     @app.post(
         f"{API_PREFIX}/runs",
         response_model=StartRunResponse,
@@ -90,13 +95,16 @@ def create_app(
                 status_code=422,
                 detail=exc.report.model_dump(mode="json"),
             ) from exc
-        return StartRunResponse(run_id=handle.run_id, state=handle.state)
+        return StartRunResponse(
+            run_id=handle.run_id, profile_id=handle.profile_id, state=handle.state
+        )
 
     @app.get(f"{API_PREFIX}/runs/{{run_id}}", response_model=RunSnapshot)
     async def get_run(run_id: str) -> RunSnapshot:
         handle = _require_run(runtime, run_id)
         return RunSnapshot(
             run_id=run_id,
+            profile_id=handle.profile_id,
             state=handle.state,
             done=handle.done,
             last_seq=handle.stream.last_seq,

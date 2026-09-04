@@ -1,0 +1,110 @@
+{
+  "$defs": {
+    "CapabilityRef": {
+      "additionalProperties": false,
+      "description": "Exact reference to a capability contract version.",
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "title": "CapabilityRef",
+      "type": "object"
+    },
+    "CompatibilityReason": {
+      "enum": [
+        "exact_capability_match",
+        "declared_profile_compatibility",
+        "capability_missing",
+        "capability_version_mismatch",
+        "profile_compatibility_unknown"
+      ],
+      "title": "CompatibilityReason",
+      "type": "string"
+    },
+    "CompatibilityStatus": {
+      "enum": [
+        "compatible",
+        "missing",
+        "incompatible",
+        "unknown"
+      ],
+      "title": "CompatibilityStatus",
+      "type": "string"
+    },
+    "NodeCompatibility": {
+      "additionalProperties": false,
+      "properties": {
+        "capability": {
+          "$ref": "#/$defs/CapabilityRef"
+        },
+        "reason": {
+          "$ref": "#/$defs/CompatibilityReason"
+        },
+        "status": {
+          "$ref": "#/$defs/CompatibilityStatus"
+        }
+      },
+      "required": [
+        "status",
+        "capability",
+        "reason"
+      ],
+      "title": "NodeCompatibility",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active_profile_id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+      "title": "Active Profile Id",
+      "type": "string"
+    },
+    "compatible": {
+      "title": "Compatible",
+      "type": "boolean"
+    },
+    "nodes": {
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]{0,127}$": {
+          "$ref": "#/$defs/NodeCompatibility"
+        }
+      },
+      "title": "Nodes",
+      "type": "object"
+    },
+    "source_profile_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Profile Id"
+    }
+  },
+  "required": [
+    "active_profile_id",
+    "compatible",
+    "nodes"
+  ],
+  "title": "CompatibilityReport",
+  "type": "object"
+}

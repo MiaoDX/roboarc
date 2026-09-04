@@ -21,6 +21,25 @@ def test_serve_tiago_selects_explicit_app(monkeypatch) -> None:
     }
 
 
+def test_serve_selects_one_startup_profile(monkeypatch) -> None:
+    invoked: dict[str, object] = {}
+
+    def fake_run(app: object, **kwargs: object) -> None:
+        invoked.update(app=app, **kwargs)
+
+    monkeypatch.setattr("uvicorn.run", fake_run)
+
+    assert main(["serve", "--profile", "deterministic-simulation"]) == 0
+    assert invoked["app"].state.runtime.registry.profile.id == "deterministic-simulation"
+
+
+def test_serve_selects_reachy_sdk_app(monkeypatch) -> None:
+    invoked = {}
+    monkeypatch.setattr("uvicorn.run", lambda app, **kwargs: invoked.update(app=app, **kwargs))
+    assert main(["serve", "--profile", "reachy2-sim"]) == 0
+    assert invoked["app"] == "roboarc_reachy.api_app:app"
+
+
 def test_validate_command(capsys) -> None:
     exit_code = main(["validate", "examples/workflows/mock-demo.json"])
     captured = capsys.readouterr()

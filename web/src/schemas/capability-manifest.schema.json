@@ -175,6 +175,15 @@
       "title": "Category",
       "type": "string"
     },
+    "compatible_profiles": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,127}$",
+        "type": "string"
+      },
+      "title": "Compatible Profiles",
+      "type": "array"
+    },
     "description": {
       "anyOf": [
         {

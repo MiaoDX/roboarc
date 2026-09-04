@@ -25,6 +25,8 @@ import React, {
 import {
   cancelRun,
   discoverCapabilities,
+  getCompatibility,
+  getProfile,
   getEvents,
   getRun,
   startRun,
@@ -550,6 +552,12 @@ export default function App() {
   const loadInput = useRef<HTMLInputElement>(null);
   const [projectName, setProjectName] = useState("Untitled workflow");
   const [manifests, setManifests] = useState<CapabilityManifest[]>([]);
+  const [profile, setProfile] = useState<{ id: string; title: string } | null>(
+    null,
+  );
+  const [compatibility, setCompatibility] = useState<
+    import("./domain").CompatibilityReport | null
+  >(null);
   const [discovery, setDiscovery] = useState<
     "loading" | "ready" | "offline" | "error"
   >("loading");
@@ -602,14 +610,27 @@ export default function App() {
           throw new Error(issues.map((issue) => issue.message).join(" "));
       }
     }
-    return workflow;
-  }, [compile, manifestMap]);
+    return { ...workflow, profile_id: profile?.id ?? null };
+  }, [compile, manifestMap, profile]);
 
   useEffect(() => {
     registerBlocks();
     let active = true;
-    discoverCapabilities()
+    getProfile()
+      .then((activeProfile) => {
+        if (!active) return;
+        setProfile(activeProfile);
+        return discoverCapabilities().then((items) => {
+          const allowed = new Set(
+            activeProfile.capabilities.map(
+              (capability) => `${capability.id}@${String(capability.version)}`,
+            ),
+          );
+          return items.filter((item) => allowed.has(manifestKey(item)));
+        });
+      })
       .then((items) => {
+        if (!items) return;
         if (active) {
           setManifests(items);
           setDiscovery("ready");
@@ -671,6 +692,7 @@ export default function App() {
       ) {
         setRevision((value) => value + 1);
         setReport(null);
+        setCompatibility(null);
       }
     };
     workspace.addChangeListener(listener);
@@ -714,6 +736,7 @@ export default function App() {
     setProjectName("Untitled workflow");
     setActionError(null);
     setReport(null);
+    setCompatibility(null);
   };
   const save = () => {
     try {
@@ -749,6 +772,7 @@ export default function App() {
       setProjectName(project.name);
       setActionError(null);
       setReport(null);
+      setCompatibility(null);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "Load failed.");
     } finally {
@@ -760,7 +784,12 @@ export default function App() {
     setActionError(null);
     try {
       const workflow = localCheck();
-      setReport(await validateRemote(workflow));
+      const [remoteReport, compatibilityReport] = await Promise.all([
+        validateRemote(workflow),
+        getCompatibility(workflow),
+      ]);
+      setReport(remoteReport);
+      setCompatibility(compatibilityReport);
     } catch (error) {
       setActionError(
         error instanceof Error ? error.message : "Validation failed.",
@@ -773,7 +802,18 @@ export default function App() {
     setBusy("run");
     setActionError(null);
     try {
-      const response = await startRun(localCheck());
+      const workflow = localCheck();
+      const report = await getCompatibility(workflow);
+      setCompatibility(report);
+      const blocked = Object.entries(report.nodes).find(
+        ([, node]) => node.status !== "compatible",
+      );
+      if (blocked) {
+        throw new Error(
+          `Node ${blocked[0]} is ${blocked[1].status}: ${blocked[1].reason}`,
+        );
+      }
+      const response = await startRun(workflow);
       setRunId(response.run_id);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "Run failed.");
@@ -885,6 +925,11 @@ export default function App() {
             )}
             {discovery}
           </span>
+          {profile && (
+            <span className="profile-badge" data-testid="active-profile">
+              {profile.title} ({profile.id})
+            </span>
+          )}
           <button
             className="button secondary"
             onClick={() => void validate()}
@@ -915,6 +960,15 @@ export default function App() {
         <div className="status-banner is-error" role="alert">
           <AlertCircle size={16} />
           <span>{actionError ?? discoveryError}</span>
+        </div>
+      )}
+      {compatibility && (
+        <div className="status-banner" data-testid="compatibility-report">
+          {Object.entries(compatibility.nodes).map(([nodeId, node]) => (
+            <span key={nodeId} data-testid={`compatibility-${nodeId}`}>
+              {nodeId}: {node.status} ({node.reason})
+            </span>
+          ))}
         </div>
       )}
       <main className="workbench">

@@ -18,10 +18,12 @@ The TIAGo review route loads a same-run manifest, renders its canonical
 Workflow IR as read-only Blockly, and presents the correlated runtime metadata,
 JSONL, Rerun, and Gazebo video artifacts. Its reusable Execution Timeline maps
 video time to node.started/node.finished events from the same trace, so playback
-and seeking highlight the active Blockly node. This is recorded-playback
-synchronization; live Gazebo control remains out of scope. Its capture starts
-only after Nav2 and the TIAGo controllers report ready, avoiding simulator
-startup footage.
+and seeking highlight the active leaf Blockly node. The desktop review layout
+prioritizes the sticky Gazebo recording beside a smaller Workflow panel, so the
+robot behavior and synchronized node remain visible together. This is
+recorded-playback synchronization; live Gazebo control remains out of scope.
+Its capture starts only after Nav2 and the TIAGo controllers report ready,
+avoiding simulator startup footage.
 The manifest renderer recursively supports sequence, wait, and capability nodes
 and verifies run/workflow identity before presenting a result.
 
@@ -36,13 +38,15 @@ outside the core package.
 The required local checks pass:
 
 ```text
-44 core Python tests passed with 2 optional ROS/TIAGo tests skipped; 27 Web unit
+44 core Python tests passed with 2 optional ROS/TIAGo tests skipped; 29 Web unit
 tests and 8 Chromium browser workflows passed. The deterministic proof produced
-47 correlated records. The live
-GPU TIAGo workflow succeeded across all four capability nodes, produced 1,339
-records, and emitted a 14.79-second H.264 1600x900 Gazebo recording plus a
-native Rerun recording that passed `rerun rrd verify`. Browser review confirmed
-the manifest-backed Blockly, run metadata, artifact links, and video render.
+47 correlated records. The latest live GPU TIAGo review run
+(`run-28dfba79cff240b0a8e729fa855a41e6`) succeeded across all four capability
+nodes, produced 1,419 observations, and emitted a 10.628-second H.264 1600x900
+Gazebo recording plus a native Rerun recording. Browser review confirmed the
+same-run manifest, cache-isolated MP4/trace URLs, active-leaf Blockly
+highlighting, run metadata, artifact links, and video render. The native Rerun
+proof passed `rerun rrd verify`.
 The ROS-enabled image also served the explicit TIAGo API with the `tiago-sim`
 profile and four exact-version capabilities, then shut down cleanly.
 ruff check .
@@ -57,8 +61,16 @@ high-severity dependency audit.
 
 ## Next
 
-v0.3 is the next planned milestone: select profiles, report capability
+v0.3 is the next roadmap milestone: select profiles, report capability
 compatibility, and prove shared semantics through a second native interface.
+An executable draft exists at
+[`docs/plans/v0.3-portability.md`](docs/plans/v0.3-portability.md) and is
+approved for implementation. Reachy 2 is the sole second robot: the required
+manual/scheduled product proof uses the official SDK-facing MuJoCo simulation
+and produces synchronized video/Blockly evidence; Gazebo/RViz are diagnostic
+only and physical hardware remains out of scope. Each service starts with one
+selected robot profile, and the Workbench exposes only that profile's registered
+capabilities; TIAGo and Reachy 2 are not required to share a demo workflow.
 The embedded viewer remains optional and should be reconsidered only if the
 standalone observation workflow demonstrates a concrete product need.
 

@@ -54,6 +54,19 @@ def test_profile_references_exact_contract_versions() -> None:
     assert profile.capabilities[0].version == 1
 
 
+def test_manifest_v1_compatibility_metadata_is_optional() -> None:
+    legacy = CapabilityManifest.model_validate(
+        {
+            "manifest_schema_version": 1,
+            "id": "demo.action",
+            "version": 1,
+            "title": "Action",
+            "category": "Demo",
+        }
+    )
+    assert legacy.compatible_profiles == ()
+
+
 def test_execution_timeout_is_bounded() -> None:
     with pytest.raises(ValidationError):
         ExecutionTraits(timeout_ms=0)

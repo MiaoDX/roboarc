@@ -40,11 +40,31 @@ def test_validation_and_invalid_start_are_deterministic() -> None:
         report = client.post("/api/v1/workflows/validate", json=payload)
         assert report.status_code == 200
         assert report.json()["valid"] is False
-        assert report.json()["issues"][0]["code"] == "unknown_capability"
+        assert report.json()["issues"][0]["code"] == "capability_missing"
 
         start = client.post("/api/v1/runs", json=payload)
         assert start.status_code == 422
         assert start.json()["detail"]["valid"] is False
+
+
+def test_compatibility_and_run_metadata_report_active_profile() -> None:
+    payload = capability_workflow()
+    with TestClient(create_app(MockAdapter())) as client:
+        report = client.post("/api/v1/workflows/compatibility", json=payload).json()
+        assert report["active_profile_id"] == "mock"
+        assert report["compatible"] is True
+        assert report["nodes"]["root"]["reason"] == "exact_capability_match"
+
+        started = client.post("/api/v1/runs", json=payload).json()
+        assert started["profile_id"] == "mock"
+        with client.websocket_connect(
+            f"/api/v1/runs/{started['run_id']}/events"
+        ) as websocket:
+            while websocket.receive_json()["type"] != "run.finished":
+                pass
+        snapshot = client.get(f"/api/v1/runs/{started['run_id']}").json()
+        assert snapshot["profile_id"] == "mock"
+        assert snapshot["result"]["profile_id"] == "mock"
 
 
 def test_run_events_are_replayable_over_websocket_and_http() -> None:

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from roboarc.contracts import (
     CapabilityManifest,
+    CompatibilityReport,
     ProjectDocument,
     RobotProfile,
     RuntimeEvent,
@@ -19,6 +20,7 @@ from roboarc.contracts import (
 
 SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "capability-manifest.schema.json": CapabilityManifest,
+    "compatibility-report.schema.json": CompatibilityReport,
     "project.schema.json": ProjectDocument,
     "robot-profile.schema.json": RobotProfile,
     "runtime-event.schema.json": RuntimeEvent,

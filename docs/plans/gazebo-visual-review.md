@@ -143,7 +143,16 @@ Review URL: `http://<host-lan-ip>:8080/gazebo-review.mp4`.
   canonical Workflow IR as Blockly, and served its MP4/JSONL/RRD through the
   LAN-visible same-origin artifact proxy.
 - Review playback now uses the manifest's UTC media origin and the same-run
-  JSONL node events to highlight the active Blockly node on timeupdate and seek.
+  JSONL node events to highlight the active leaf Blockly node on timeupdate and
+  seek.
+- The latest cache-isolated review rerun
+  (`run-28dfba79cff240b0a8e729fa855a41e6`) succeeded with 1,419 observations
+  and a 10.628-second H.264 1600x900 recording. Its manifest names the same-run
+  JSONL, Rerun, MP4, and UTC media origin; browser verification loaded those
+  artifacts through run-scoped URLs.
+- The desktop review layout keeps the larger Gazebo recording sticky beside a
+  smaller Workflow panel, allowing reviewers to operate the video timeline
+  while watching Blockly highlights. The Web unit suite now passes 29 tests.
 
 ## Execution And Stop Gates
 
