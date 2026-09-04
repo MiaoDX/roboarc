@@ -34,6 +34,12 @@ RUN python -m pip install --no-cache-dir \
     && git -C /opt/reachy2_mujoco checkout --detach "${REACHY2_MUJOCO_COMMIT}" \
     && grep -q 'description/mjcf/desk_scene.xml' /opt/reachy2_mujoco/reachy2_mujoco/reachy2_mujoco/reachy_mujoco.py \
     && sed -i 's#description/mjcf/desk_scene.xml#description/mjcf/table_scene.xml#' /opt/reachy2_mujoco/reachy2_mujoco/reachy2_mujoco/reachy_mujoco.py \
+    && sed -i 's#<body pos="0.7 0 0" name="table"#<body pos="3.0 0 0" name="table"#' /opt/reachy2_mujoco/reachy2_mujoco/description/mjcf/table_scene.xml \
+    && sed -i 's#<body name="goal" pos="0.45 -0.4 0.65"#<body name="goal" pos="3.0 -0.4 0.65"#' /opt/reachy2_mujoco/reachy2_mujoco/description/mjcf/table_scene.xml \
+    && sed -i 's#                self._update()#                self.mobile_base._update()#' /opt/reachy2_mujoco/reachy2_mujoco/reachy2_mujoco/reachy_mujoco.py \
+    && sed -i '/                mujoco.mj_step(self._model, self._data, 20)/i\                loop_started = time.monotonic()' /opt/reachy2_mujoco/reachy2_mujoco/reachy2_mujoco/reachy_mujoco.py \
+    && sed -i '/                viewer.sync()/a\                time.sleep(max(0.0, 0.02 - (time.monotonic() - loop_started)))' /opt/reachy2_mujoco/reachy2_mujoco/reachy2_mujoco/reachy_mujoco.py \
+    && sed -i '/with mujoco.viewer.launch_passive(self._model, self._data, show_left_ui=False, show_right_ui=False) as viewer:/a\            viewer.cam.azimuth = 135\n            viewer.cam.elevation = -12\n            viewer.cam.distance = 2.35\n            viewer.cam.lookat[:] = [0.18, 0.0, 0.62]' /opt/reachy2_mujoco/reachy2_mujoco/reachy2_mujoco/reachy_mujoco.py \
     && python -m pip install --no-cache-dir --no-deps -e /opt/reachy2_mujoco \
     && rm -rf /root/.cache/pip /opt/reachy2_mujoco/.git /opt/reachy2_symbolic_ik/.git
 

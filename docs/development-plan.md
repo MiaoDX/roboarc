@@ -14,9 +14,9 @@ completed implementation truth belongs in `STATUS.md` and the linked docs.
 | v0.1c | First real ROS 2 Action lifecycle proof | Implemented | [v0.1c plan](plans/v0.1c-ros2-action.md) |
 | v0.2a | Observable simulation loop and telemetry proof | Implemented | [v0.2a plan](plans/v0.2a-observable-simulation.md) |
 | v0.2b | TIAGo simulation with a narrow useful capability set | Implemented and manually proven | [v0.2a evidence](plans/v0.2a-observable-simulation.md) |
-| v0.3 | Reachy 2 SDK/MuJoCo visual portability proof | Approved; not started | [v0.3 plan](plans/v0.3-portability.md) |
-| v0.4 | Programming-model hardening driven by real workflows | Deferred | Create only when concrete demand exists |
-| v1.0 | Stable contracts and compatibility policy | Deferred | Requires evidence from prior milestones |
+| v0.3 | Reachy 2 SDK/MuJoCo visual portability proof | Implemented and manually proven | [v0.3 plan](plans/v0.3-portability.md) |
+| v0.4 | Community Task Composition Slice | Preflight ready | [composition plan](plans/community-task-composition.md) |
+| v1.0 | Stable release decision, if evidence justifies it | Unscheduled | No plan until real community usage stabilizes the contracts |
 
 ## Implemented Foundation
 
@@ -40,14 +40,18 @@ See [STATUS.md](../STATUS.md) for current proof and
 - **v0.2b:** proved `navigation.goto_location`, `navigation.stop`,
   `head.look_at`, and `speech.say` against TIAGo in Gazebo; manipulation remains
   deferred.
-- **v0.3:** add startup profile selection and compatibility reporting, then run
-  a profile-appropriate workflow through a Reachy 2 SDK-facing adapter against
-  the official MuJoCo simulation, with synchronized visual evidence. TIAGo and
-  Reachy 2 need not expose the same capabilities or demo workflow.
-- **v0.4:** consider typed references, conditions, bounded repeat, parallelism,
-  retry/fallback, subflows, resource arbitration, and replay only when concrete
-  workflows justify their semantics.
-- **v1.0:** publish compatibility and migration policy for every external contract.
+- **v0.3:** completed startup profile selection, compatibility reporting, and a
+  profile-appropriate workflow through a Reachy 2 SDK-facing adapter against
+  the official MuJoCo simulation. The self-built minimal image produced
+  synchronized video and Workflow IR evidence; TIAGo and Reachy 2 retain
+  profile-specific semantic capabilities and need not share a demo workflow.
+- **v0.4:** prove a small, TIAGo-first task-composition journey with the
+  existing `sequence`, `wait`, and `capability` nodes. The complete scope,
+  cuts, and stop gates live in
+  [`docs/plans/community-task-composition.md`](plans/community-task-composition.md).
+- **v1.0:** not a committed feature phase. Consider a stable release only if
+  real community usage produces enough adapter and contract evidence to justify
+  freezing compatibility and migration policy.
 
 ## Standing Boundaries
 
@@ -56,7 +60,8 @@ See [STATUS.md](../STATUS.md) for current proof and
 - Capability IDs become shared standards only after compatible real adapters prove them.
 - Cancellation request acceptance never implies terminal cancellation.
 - Authentication, persistence, collaboration, scheduling, arbitrary code
-  execution, fleet orchestration, and a Rust rewrite are not v0.x core goals.
+  execution, fleet orchestration, universal capability catalogs, and a Rust
+  rewrite are not current goals.
 - Simulator and hardware tests remain separate from always-on core CI.
 
 ## Quality Floor

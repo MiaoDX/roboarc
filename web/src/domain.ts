@@ -197,6 +197,7 @@ export interface ToolboxDefinition {
 
 export function toolboxFromManifests(
   manifests: CapabilityManifest[],
+  profileId?: string,
 ): ToolboxDefinition {
   const categories = new Map<string, CapabilityManifest[]>();
   for (const manifest of manifests) {
@@ -212,6 +213,22 @@ export function toolboxFromManifests(
       name,
       categorystyle: "roboarc_capability_category",
       contents: entries
+        .filter(
+          (manifest) =>
+            !(
+              (["reachy.arm.pose_joints", "reachy.arm.gesture"].includes(
+                manifest.id,
+              ) ||
+                (profileId === "tiago-sim" &&
+                  [
+                    "navigation.goto_location",
+                    "head.look_at",
+                    "speech.say",
+                    "navigation.stop",
+                  ].includes(manifest.id))) &&
+              manifest.version === 1
+            ),
+        )
         .sort((left, right) =>
           `${left.id}@${String(left.version)}`.localeCompare(
             `${right.id}@${String(right.version)}`,
@@ -224,8 +241,28 @@ export function toolboxFromManifests(
             CAPABILITY: `${manifest.id}@${String(manifest.version)}`,
           },
         })),
-    }));
+    }))
+    .filter((category) => category.contents.length > 0);
 
+  const hasReachyArm = manifests.some(
+    (manifest) =>
+      manifest.id === "reachy.arm.gesture" && manifest.version === 1,
+  );
+  const tiagoBlocks =
+    profileId === "tiago-sim"
+      ? [
+          ["navigation.goto_location", "tiago_goto_location"],
+          ["head.look_at", "tiago_look_at"],
+          ["speech.say", "tiago_say"],
+          ["navigation.stop", "tiago_stop_navigation"],
+        ]
+          .filter(([id]) =>
+            manifests.some(
+              (manifest) => manifest.id === id && manifest.version === 1,
+            ),
+          )
+          .map(([, type]) => ({ kind: "block" as const, type }))
+      : [];
   return {
     kind: "categoryToolbox",
     contents: [
@@ -239,6 +276,26 @@ export function toolboxFromManifests(
         ],
       },
       ...capabilityCategories,
+      ...(hasReachyArm
+        ? [
+            {
+              kind: "category" as const,
+              name: "Reachy actions",
+              categorystyle: "roboarc_capability_category",
+              contents: [{ kind: "block" as const, type: "robo_action" }],
+            },
+          ]
+        : []),
+      ...(tiagoBlocks.length
+        ? [
+            {
+              kind: "category" as const,
+              name: "TIAGo actions",
+              categorystyle: "roboarc_capability_category",
+              contents: tiagoBlocks,
+            },
+          ]
+        : []),
     ],
   };
 }

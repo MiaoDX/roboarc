@@ -255,7 +255,7 @@ test("renders a canonical review manifest as Blockly", async ({ page }) => {
           started_at: "2026-09-01T00:00:00Z",
           finished_at: "2026-09-01T00:00:01Z",
         },
-        profile_id: "review-sim",
+        profile_id: "tiago-sim",
         observation_count: 42,
         artifacts: {
           trace: "trace.jsonl",
@@ -314,7 +314,7 @@ test("renders a canonical review manifest as Blockly", async ({ page }) => {
     page.getByRole("heading", { name: "Stable review demo" }),
   ).toBeVisible();
   await expect(page.getByText("run-browser-review")).toBeVisible();
-  await expect(page.locator(".blockly-review")).toContainText("speech.say@1");
+  await expect(page.locator(".blockly-review")).toContainText("Say");
   await expect(page.locator(".step-list")).toContainText("250 ms");
   await expect(page.getByRole("link", { name: "Rerun RRD" })).toHaveCount(0);
   await page.evaluate(() => {

@@ -1,7 +1,7 @@
 {
   "workflow_schema_version": 1,
   "id": "tiago-observable",
-  "name": "TIAGo observable welcome",
+  "name": "TIAGo reception greeting",
   "workflow": {
     "id": "root",
     "type": "sequence",
@@ -19,16 +19,22 @@
         "args": {}
       },
       {
-        "id": "look-at-visitor",
+        "id": "look-ahead",
         "type": "capability",
         "capability": {"id": "head.look_at", "version": 1},
         "args": {"frame": "base_footprint", "x": 1.5, "y": 0.0, "z": 1.6}
       },
       {
-        "id": "welcome-visitor",
+        "id": "greet-at-reception",
         "type": "capability",
         "capability": {"id": "speech.say", "version": 1},
         "args": {"text": "Welcome to RoboArc."}
+      },
+      {
+        "id": "community-note",
+        "type": "capability",
+        "capability": {"id": "community.say", "version": 1},
+        "args": {"text": "Community extension ready."}
       }
     ]
   }

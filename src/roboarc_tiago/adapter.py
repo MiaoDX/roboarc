@@ -38,6 +38,7 @@ from roboarc.runtime.context import ExecutionContext
 from roboarc.telemetry import ActionPhase, ActionState, Observation
 
 from .profile import (
+    COMMUNITY_SAY,
     DEFAULT_LOCATIONS,
     GOTO_LOCATION,
     LOOK_AT,
@@ -109,7 +110,7 @@ class TiagoRosAdapter(CapabilityAdapter):
             return await self._stop_navigation(context)
         if capability == LOOK_AT.ref:
             return await self._look_at(args, context)
-        if capability == SAY.ref:
+        if capability in (SAY.ref, COMMUNITY_SAY.ref):
             self._speech.publish(String(data=str(args["text"])))
             await context.report_progress(stage="published", message="Speech text published")
             return _ImmediateInvocation(CapabilityResult(status=ResultStatus.SUCCESS))

@@ -2,17 +2,21 @@
 
 ## Current
 
-RoboArc has completed v0.2a: the observable simulation loop and the separate
-TIAGo ROS 2 Jazzy/Gazebo Harmonic proof. The Python package, typed contracts,
+RoboArc has completed v0.3: the observable simulation loop, the separate
+TIAGo ROS 2 Jazzy/Gazebo Harmonic proof, and a Reachy 2 SDK/MuJoCo portability
+proof. The Python package, typed contracts,
 generated schemas, asyncio runtime, deterministic adapters, CLI, FastAPI
 HTTP/WebSocket transport, and React/Blockly workbench are implemented. Blockly
 remains editor state; compiled Workflow IR remains the executable source of
 truth.
 
-The workbench supports capability discovery, sequence/wait/capability blocks,
-manifest-driven arguments, project download/upload, local and backend
-validation, run/stop controls, stable block highlighting, progress, logs,
-errors, duration, terminal results, and WebSocket reconnect/replay.
+The workbench supports capability discovery, sequence/wait blocks, semantic
+Reachy and TIAGo action blocks, generic capability fallback, manifest-driven
+arguments, project download/upload, local and backend validation, run/stop
+controls, stable block highlighting, progress, logs, errors, duration,
+terminal results, and WebSocket reconnect/replay. Semantic blocks compile to
+the same exact-version Workflow IR capability refs and only replace generic
+blocks when their arguments are fully representable.
 
 The TIAGo review route loads a same-run manifest, renders its canonical
 Workflow IR as read-only Blockly, and presents the correlated runtime metadata,
@@ -33,13 +37,19 @@ recordings. The pinned TIAGo lane runs the same observation vocabulary through
 Nav2, controllers, TF, and Gazebo while keeping ROS and simulator dependencies
 outside the core package.
 
+The Reachy 2 lane is a minimal self-built image around Pollen Robotics'
+open-source MuJoCo fake SDK. Its completed proof artifact uses the
+`reachy2-sim` profile, completed successfully with 968 trace observations, a
+1280x720 H.264 recording, and pinned source/image provenance. The reusable
+artifact validator passes for both the Reachy and TIAGo proof directories.
+
 ## Verification
 
 The required local checks pass:
 
 ```text
-44 core Python tests passed with 2 optional ROS/TIAGo tests skipped; 29 Web unit
-tests and 8 Chromium browser workflows passed. The deterministic proof produced
+44 core Python tests passed with 2 optional ROS/TIAGo tests skipped; 41 Web unit
+tests and 9 Chromium browser workflows passed. The deterministic proof produced
 47 correlated records. The latest live GPU TIAGo review run
 (`run-28dfba79cff240b0a8e729fa855a41e6`) succeeded across all four capability
 nodes, produced 1,419 observations, and emitted a 10.628-second H.264 1600x900
@@ -61,22 +71,23 @@ high-severity dependency audit.
 
 ## Next
 
-v0.3 is the next roadmap milestone: select profiles, report capability
-compatibility, and prove shared semantics through a second native interface.
-An executable draft exists at
-[`docs/plans/v0.3-portability.md`](docs/plans/v0.3-portability.md) and is
-approved for implementation. Reachy 2 is the sole second robot: the required
-manual/scheduled product proof uses the official SDK-facing MuJoCo simulation
-and produces synchronized video/Blockly evidence; Gazebo/RViz are diagnostic
-only and physical hardware remains out of scope. Each service starts with one
-selected robot profile, and the Workbench exposes only that profile's registered
-capabilities; TIAGo and Reachy 2 are not required to share a demo workflow.
+v0.3 is complete. The profile-selected Workbench, semantic robot blocks, and
+Reachy 2 SDK-facing MuJoCo proof are implemented. The next proposed slice is
+the TIAGo-first Community Task Composition plan in
+[`docs/plans/community-task-composition.md`](docs/plans/community-task-composition.md).
+The standalone review route
+and `scripts/validate_review_artifacts.py` keep the video, Workflow IR, result,
+trace, and profile identity checkable as one artifact set. Physical hardware
+remains out of scope. Each service starts with one selected robot profile, and
+the Workbench exposes only that profile's registered capabilities; TIAGo and
+Reachy 2 are not required to share a demo workflow.
 The embedded viewer remains optional and should be reconsidered only if the
 standalone observation workflow demonstrates a concrete product need.
 
 ## Deferred
 
 General expressions, variables, loops, parallelism, persistence, auth,
-databases, embedded visualization, and production hardware adapters remain outside
-the current core slice. See [docs/development-plan.md](docs/development-plan.md)
-for the staged roadmap.
+databases, embedded visualization, universal catalogs, and production hardware
+adapters remain outside the current core slice. See
+[docs/development-plan.md](docs/development-plan.md) and the composition plan
+for the evidence-driven roadmap.

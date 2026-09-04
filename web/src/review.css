@@ -136,6 +136,20 @@
   gap: 0.65rem;
   padding: 0.85rem 0;
   border-top: 1px solid var(--color-rule);
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.workflow-step.is-active {
+  background: #fff7e6;
+  box-shadow: inset 3px 0 #d97706;
+}
+.playing-badge {
+  display: inline-block;
+  margin-left: 0.55rem;
+  color: #92400e;
+  font: 700 0.65rem var(--font-mono);
+  text-transform: uppercase;
 }
 .step-index {
   color: var(--color-muted);

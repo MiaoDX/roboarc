@@ -44,10 +44,36 @@ ARM_POSE_JOINTS = CapabilityManifest(
     progress=ProgressSpec(mode=ProgressMode.PERCENT, source=ProgressSource.ESTIMATED),
     resources=("arm_motion",),
 )
-REACHY_MANIFESTS = (ARM_POSE_JOINTS,)
+ARM_GESTURE = CapabilityManifest(
+    id="reachy.arm.gesture",
+    version=1,
+    title="Perform arm gesture",
+    category="Reachy actions",
+    description="Perform a named, visually meaningful Reachy arm gesture.",
+    inputs={
+        "gesture": ValueSpec(
+            type=ValueType.STRING,
+            required=True,
+            enum=("home", "raise", "wave", "present"),
+        ),
+        "side": ValueSpec(type=ValueType.STRING, required=True, enum=("left", "right")),
+        "duration_ms": ValueSpec(
+            type=ValueType.DURATION_MS, default=6000, minimum=100, maximum=10_000
+        ),
+    },
+    outputs={
+        "gesture": ValueSpec(type=ValueType.STRING, required=True),
+        "side": ValueSpec(type=ValueType.STRING, required=True),
+        "completed": ValueSpec(type=ValueType.BOOLEAN, required=True),
+    },
+    execution=ExecutionTraits(timeout_ms=30_000, cancellable=False),
+    progress=ProgressSpec(mode=ProgressMode.PERCENT, source=ProgressSource.ESTIMATED),
+    resources=("arm_motion",),
+)
+REACHY_MANIFESTS = (ARM_GESTURE,)
 REACHY_PROFILE = RobotProfile(
     id="reachy2-sim",
     title="Reachy 2 MuJoCo",
     adapter="reachy2-sdk",
-    capabilities=(ARM_POSE_JOINTS.ref,),
+    capabilities=(ARM_GESTURE.ref,),
 )

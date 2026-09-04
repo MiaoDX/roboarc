@@ -1,0 +1,16 @@
+{
+  "workflow_schema_version": 1,
+  "id": "tiago-look-and-say",
+  "name": "Look and say",
+  "profile_id": "tiago-sim",
+  "workflow": {
+    "id": "root",
+    "type": "sequence",
+    "children": [
+      {"id": "look-left", "type": "capability", "capability": {"id": "head.look_at", "version": 1}, "args": {"frame": "base_footprint", "x": 1.2, "y": 0.8, "z": 1.5}},
+      {"id": "say", "type": "capability", "capability": {"id": "speech.say", "version": 1}, "args": {"text": "I am looking left."}},
+      {"id": "pause", "type": "wait", "duration_ms": 500},
+      {"id": "look-right", "type": "capability", "capability": {"id": "head.look_at", "version": 1}, "args": {"frame": "base_footprint", "x": 1.2, "y": -0.8, "z": 1.5}}
+    ]
+  }
+}

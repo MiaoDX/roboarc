@@ -15,6 +15,7 @@ def test_tiago_profile_exposes_exact_v1_capability_refs() -> None:
         ("navigation.stop", 1),
         ("head.look_at", 1),
         ("speech.say", 1),
+        ("community.say", 1),
     ]
     assert tuple(manifest.ref for manifest in TIAGO_MANIFESTS) == TIAGO_PROFILE.capabilities
 

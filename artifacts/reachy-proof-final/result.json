@@ -1,9 +1,9 @@
 {
-  "run_id": "run-8434b5064fa5486db9683847896e5334",
+  "run_id": "run-00952e2404bc4149b395c744c818140b",
   "workflow_id": "reachy-observable",
   "profile_id": "reachy2-sim",
   "state": "succeeded",
   "error": null,
-  "started_at": "2026-09-02T09:40:28.956887Z",
-  "finished_at": "2026-09-02T09:40:32.036013Z"
+  "started_at": "2026-09-03T04:53:34.668676Z",
+  "finished_at": "2026-09-03T04:54:06.669852Z"
 }

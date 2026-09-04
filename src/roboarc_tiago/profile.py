@@ -61,7 +61,18 @@ SAY = CapabilityManifest(
     resources=("speech",),
 )
 
-TIAGO_MANIFESTS = (GOTO_LOCATION, STOP_NAVIGATION, LOOK_AT, SAY)
+# Repository-local extension fixture used to prove the existing registry seam.
+COMMUNITY_SAY = CapabilityManifest(
+    id="community.say",
+    version=1,
+    title="Community say",
+    category="Community",
+    inputs={"text": ValueSpec(type=ValueType.STRING, required=True)},
+    execution=ExecutionTraits(timeout_ms=10_000, cancellable=False),
+    resources=("speech",),
+)
+
+TIAGO_MANIFESTS = (GOTO_LOCATION, STOP_NAVIGATION, LOOK_AT, SAY, COMMUNITY_SAY)
 
 TIAGO_PROFILE = RobotProfile(
     id="tiago-sim",

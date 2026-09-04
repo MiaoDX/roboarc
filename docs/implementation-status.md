@@ -1,6 +1,6 @@
 # Implementation Status
 
-## Completed through v0.2a
+## Completed through v0.3
 
 ### Contracts
 
@@ -44,7 +44,11 @@ The FastAPI service supports capability discovery, validation, start/cancel cont
 
 - React/TypeScript/Vite application shell with an embedded Blockly 12 editor.
 - Capability toolbox and manifest-driven argument inspector from runtime discovery.
-- Supported `sequence`, `wait`, and `capability` blocks with stable node IDs.
+- Supported `sequence` and `wait` blocks, semantic Reachy/TIAGo action blocks,
+  and generic capability fallback with stable node IDs.
+- TIAGo `Go to`, spatial `Look` (`ahead`, `left`, or `right`), `Say`, and `Stop
+  navigation` blocks compile to the existing exact v1 capability contracts;
+  non-representable canonical payloads remain generic and lossless.
 - Deterministic compilation to Workflow IR and local schema validation.
 - Atomic project save/load with Blockly editor state kept separate from canonical IR.
 - Backend validation, run/stop controls, block highlighting, progress, logs,
@@ -56,8 +60,8 @@ The FastAPI service supports capability discovery, validation, start/cancel cont
 The test suite covers contract strictness, generated schema drift, registry conformance, argument validation, ordered events, fail-fast behavior, cancellation acknowledgement, cancellation incompleteness, timeout cleanup, adapter output violations, CLI execution, and HTTP/WebSocket behavior.
 
 GitHub Actions runs the Python suite on 3.11, 3.12, and 3.13. The Web job runs
-Prettier, ESLint, TypeScript, 24 unit tests, schema drift checks, a production
-build, seven Chromium workflows, and the dependency audit.
+Prettier, ESLint, TypeScript, 40 unit tests, schema drift checks, a production
+build, nine Chromium workflows, and the dependency audit.
 
 ### ROS 2 Action lifecycle proof
 
@@ -81,6 +85,24 @@ and `speech.say` onto Nav2, controllers, and a speech transport seam. Its
 four-node workflow completed successfully with correlated TF-derived pose and
 trajectory telemetry; the native Rerun recording passed verification.
 
+### Reachy 2 portability proof
+
+The minimal Reachy 2 lane self-builds Pollen Robotics' open-source MuJoCo fake
+SDK and keeps vendor details outside the core contracts/runtime packages. The
+completed review artifact uses the `reachy2-sim` profile and a succeeded
+`reachy-observable` workflow with 968 trace observations and a 1280x720 H.264
+MuJoCo recording. Its image digest, base image, upstream commits, and MuJoCo
+version are recorded in the manifest. Validate the complete artifact set with:
+
+```bash
+python scripts/validate_review_artifacts.py artifacts/reachy-proof-final
+```
+
+`--check-media` additionally requires host `ffprobe`; `--check-rerun` requires
+the `rerun` CLI. The corresponding TIAGo proof artifact validates through the
+same command and remains a recorded manual ROS/Gazebo proof, not a production
+hardware adapter.
+
 ## Deliberately not implemented
 
 - `if`, general expressions, variables, and output references;
@@ -90,14 +112,21 @@ trajectory telemetry; the native Rerun recording passed verification.
 - persistent or restartable runs;
 - authentication, multi-user authorization, databases, or cloud services;
 - arbitrary code execution;
-- production ROS 2, Reachy 2, or hardware adapters. A deterministic simulation
-  adapter and a proven TIAGo ROS/Gazebo manual adapter exist, but the latter is
-  not a supported production adapter.
+- physical production hardware adapters. Deterministic simulation, the Reachy
+  2 SDK/MuJoCo portability lane, and a proven TIAGo ROS/Gazebo manual adapter
+  exist; these remain simulator/manual integrations rather than supported
+  production hardware adapters.
 
-## Recommended continuation
+## Future work
 
-### Portability proof
+### Community task composition
 
-Proceed to v0.3 profile selection and compatibility reporting, then prove at
-least three semantically shared capabilities through a second native interface.
-Keep simulator proofs outside always-on core CI.
+The next proposed slice is the TIAGo-first
+[Community Task Composition plan](plans/community-task-composition.md). It uses
+the existing `sequence`, `wait`, and `capability` nodes to prove that a
+developer can create, run, save, import, and review a task that is not a canned
+fixture. Simulator proofs remain outside always-on core CI.
+
+Additional control-flow nodes, persistence, authentication, perception,
+manipulation, and hardware support require separate workflow-driven proposals;
+they are not implied by this slice.

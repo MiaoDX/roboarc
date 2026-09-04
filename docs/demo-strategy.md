@@ -1,6 +1,9 @@
 # Demo Strategy
 
-RoboArc should prove its programming model before taking on the operational complexity of a real robot. The demo strategy therefore has three layers: a first-class mock robot, a reference mobile manipulator simulation, and a second robot that demonstrates portability.
+RoboArc should prove task composition before taking on the operational complexity
+of more robots or a larger programming language. The current product demo uses
+TIAGo as the primary composition target; the completed Reachy 2 lane remains a
+portability/regression proof.
 
 ## 1. MockAdapter: required for v0.1
 
@@ -45,39 +48,30 @@ PAL Robotics documents launching TIAGo simulation together with Nav2 and MoveIt 
 
 Reference: https://github.com/pal-robotics/tiago_simulation
 
-### Candidate demo workflows
+### Small composition fixtures
 
-**Welcome visitor**
+**Reception greeting**
 
 ```text
 Go to Reception
--> Wait for person
--> Look at person
--> Say "Welcome!"
--> Gesture
+-> Stop navigation
+-> Look ahead
+-> Say "Welcome to RoboArc."
 ```
 
-**Patrol**
+**Look and say**
 
 ```text
-Repeat
-  Go to Reception
-  Look around
-  Go to Kitchen
-  Look around
+Wait
+-> Look left
+-> Say "I am ready."
 ```
 
-**Fetch object**
-
-```text
-Go to Table
--> Detect object
--> Pick
--> Go to Drop Zone
--> Place
-```
-
-The first TIAGo milestone does not need all three. Navigation + head + speech is enough to validate the adapter boundary before adding manipulation.
+These are repository-owned examples, not a stable task catalog. The next
+composition milestone requires one additional task created by a user from the
+same blocks, with no new Workflow IR node type. Patrol, fetch, manipulation,
+perception, and other larger workflows are parked until a real workflow makes
+their semantics necessary.
 
 ## 3. Reachy 2: selected portability/showcase target
 
@@ -95,12 +89,10 @@ The tutorials explicitly support running examples against MuJoCo as well as the 
 
 Reachy 2 is particularly valuable for demonstrating that RoboArc does not require ROS-facing capability handlers: the adapter can target the higher-level SDK.
 
-For v0.3, the official Docker image's MuJoCo + SDK server path is the product
-proof. Its browser display is recorded into the same manifest-backed,
-time-aligned review workflow used for TIAGo. The official Gazebo/RViz path
-remains available for engineering diagnosis but is not a second v0.3 product
-lane. The image and dependencies must be pinned, and real Reachy hardware is not
-required.
+For v0.3, the MuJoCo + SDK server path is the completed portability proof. It
+remains available for engineering diagnosis and regression review; the next
+community composition slice does not require another robot. Real Reachy
+hardware is not required.
 
 The Reachy adapter registers only capabilities it actually supports. Its demo
 does not need to reproduce the TIAGo workflow: portability is demonstrated by

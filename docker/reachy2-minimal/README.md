@@ -48,6 +48,13 @@ Xvfb even when no host display is attached. A RoboArc adapter should remain
 outside `roboarc.contracts` and `roboarc.runtime` and treat this endpoint as a
 native transport boundary.
 
-This lane is suitable for adapter development and deterministic integration
-checks. It does not by itself satisfy the v0.3 visual product gate until a
-workflow-specific adapter, recording, and media validation are added.
+This lane is the documented v0.3 visual proof lane for adapter development and
+deterministic integration checks. The completed proof set lives in
+`artifacts/reachy-proof-final` and can be checked as a whole with:
+
+```bash
+python scripts/validate_review_artifacts.py artifacts/reachy-proof-final
+```
+
+Add `--check-media` when `ffprobe` is available to inspect the recording, or
+`--check-rerun` when the `rerun` CLI is available to verify the native recording.
