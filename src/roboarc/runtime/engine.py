@@ -356,58 +356,14 @@ class _Execution:
             if result_task in done:
                 return self._map_capability_result(node, result_task.result())
             if cancel_task in done and self.cancel_event.is_set():
-                await self.stream.emit(
-                    EventType.NODE_CANCEL_REQUESTED,
-                    {"state": NodeState.CANCELING.value, "reason": "run_cancel"},
-                    node_id=node.id,
+                result, detached = await self._cancel_invocation(
+                    node, invocation, result_task, reason="run_cancel", timeout_ms=None
                 )
-                disposition = await invocation.request_cancel()
-                outcome = await self._wait_for_cleanup(result_task)
-                if outcome is None:
-                    detached = True
-                    await invocation.detach()
-                    return (
-                        NodeState.FAILED,
-                        {},
-                        ExecutionError(
-                            code=ErrorCode.CANCELLATION_INCOMPLETE,
-                            message="capability did not reach a terminal state after cancellation",
-                            details={"disposition": disposition.value},
-                        ),
-                    )
-                return self._map_capability_result(node, outcome)
-
-            await self.stream.emit(
-                EventType.NODE_CANCEL_REQUESTED,
-                {"state": NodeState.CANCELING.value, "reason": "timeout"},
-                node_id=node.id,
+                return result
+            result, detached = await self._cancel_invocation(
+                node, invocation, result_task, reason="timeout", timeout_ms=timeout_ms
             )
-            disposition = await invocation.request_cancel()
-            outcome = await self._wait_for_cleanup(result_task)
-            if outcome is None:
-                detached = True
-                await invocation.detach()
-                return (
-                    NodeState.FAILED,
-                    {},
-                    ExecutionError(
-                        code=ErrorCode.CANCELLATION_INCOMPLETE,
-                        message="timed-out capability may still be executing",
-                        details={"disposition": disposition.value, "timeout_ms": timeout_ms},
-                    ),
-                )
-            return (
-                NodeState.TIMED_OUT,
-                {},
-                ExecutionError(
-                    code=ErrorCode.CAPABILITY_TIMEOUT,
-                    message=f"capability exceeded its {timeout_ms} ms deadline",
-                    details={
-                        "disposition": disposition.value,
-                        "terminal_status": outcome.status.value,
-                    },
-                ),
-            )
+            return result
         finally:
             for task in (cancel_task, timeout_task):
                 if not task.done():
@@ -416,6 +372,38 @@ class _Execution:
             if not result_task.done() and not detached:
                 result_task.cancel()
                 await asyncio.gather(result_task, return_exceptions=True)
+
+    async def _cancel_invocation(
+        self,
+        node: CapabilityNode,
+        invocation: CapabilityInvocation,
+        result_task: asyncio.Task[CapabilityResult],
+        *,
+        reason: str,
+        timeout_ms: int | None,
+    ) -> tuple[tuple[NodeState, dict[str, Any], ExecutionError | None], bool]:
+        await self.stream.emit(EventType.NODE_CANCEL_REQUESTED,
+            {"state": NodeState.CANCELING.value, "reason": reason}, node_id=node.id)
+        disposition = await invocation.request_cancel()
+        outcome = await self._wait_for_cleanup(result_task)
+        if outcome is None:
+            await invocation.detach()
+            message = ("capability did not reach a terminal state after cancellation"
+                       if reason == "run_cancel" else "timed-out capability may still be executing")
+            details: dict[str, Any] = {"disposition": disposition.value}
+            if timeout_ms is not None:
+                details["timeout_ms"] = timeout_ms
+            return (NodeState.FAILED, {}, ExecutionError(
+                code=ErrorCode.CANCELLATION_INCOMPLETE, message=message, details=details)), True
+        if reason == "run_cancel":
+            return self._map_capability_result(node, outcome), False
+        return (NodeState.TIMED_OUT, {}, ExecutionError(
+            code=ErrorCode.CAPABILITY_TIMEOUT,
+            message=f"capability exceeded its {timeout_ms} ms deadline",
+            details={
+                "disposition": disposition.value,
+                "terminal_status": outcome.status.value,
+            })), False
 
     async def _wait_for_cleanup(
         self, result_task: asyncio.Task[CapabilityResult]
