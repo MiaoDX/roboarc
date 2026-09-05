@@ -20,7 +20,7 @@ from roboarc.contracts import (
     ValueSpec,
     ValueType,
 )
-from roboarc.runtime.adapter import CancellationDisposition, CapabilityInvocation
+from roboarc.runtime.adapter import TaskInvocation
 from roboarc.runtime.context import ExecutionContext
 
 Handler = Callable[
@@ -29,34 +29,7 @@ Handler = Callable[
 ]
 
 
-class MockInvocation(CapabilityInvocation):
-    def __init__(
-        self,
-        task: asyncio.Task[CapabilityResult],
-        cancel_event: asyncio.Event,
-        cancellable: bool,
-    ) -> None:
-        self._task = task
-        self._cancel_event = cancel_event
-        self._cancellable = cancellable
-
-    async def result(self) -> CapabilityResult:
-        return await asyncio.shield(self._task)
-
-    async def request_cancel(self) -> CancellationDisposition:
-        if self._task.done():
-            return CancellationDisposition.ALREADY_COMPLETE
-        if not self._cancellable:
-            return CancellationDisposition.UNSUPPORTED
-        self._cancel_event.set()
-        return CancellationDisposition.ACCEPTED
-
-    async def detach(self) -> None:
-        # The task deliberately continues: detaching local observation must not pretend
-        # that an uncancellable native action stopped. Consume any later exception.
-        self._task.add_done_callback(
-            lambda task: task.exception() if not task.cancelled() else None
-        )
+MockInvocation = TaskInvocation
 
 
 class MockAdapter:

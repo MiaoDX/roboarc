@@ -25,7 +25,7 @@ from roboarc.contracts import (
     ValueSpec,
     ValueType,
 )
-from roboarc.runtime.adapter import CancellationDisposition, CapabilityInvocation
+from roboarc.runtime.adapter import TaskInvocation
 from roboarc.runtime.context import ExecutionContext
 from roboarc.telemetry import (
     ActionPhase,
@@ -52,24 +52,7 @@ class SimulatedPose:
         return {"frame": self.frame, "x": self.x, "y": self.y, "yaw": self.yaw}
 
 
-class _SimulationInvocation(CapabilityInvocation):
-    def __init__(self, task: asyncio.Task[CapabilityResult], cancel_event: asyncio.Event) -> None:
-        self._task = task
-        self._cancel_event = cancel_event
-
-    async def result(self) -> CapabilityResult:
-        return await asyncio.shield(self._task)
-
-    async def request_cancel(self) -> CancellationDisposition:
-        if self._task.done():
-            return CancellationDisposition.ALREADY_COMPLETE
-        self._cancel_event.set()
-        return CancellationDisposition.ACCEPTED
-
-    async def detach(self) -> None:
-        self._task.add_done_callback(
-            lambda task: task.exception() if not task.cancelled() else None
-        )
+_SimulationInvocation = TaskInvocation
 
 
 class DeterministicSimulationAdapter:

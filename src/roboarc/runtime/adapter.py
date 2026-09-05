@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from enum import StrEnum
 from typing import Protocol
 
@@ -33,6 +34,34 @@ class CapabilityInvocation(Protocol):
 
     async def detach(self) -> None:
         """Release local observation after the runtime stops waiting for the operation."""
+
+
+class TaskInvocation:
+    """Task-backed invocation shared by deterministic adapters."""
+
+    def __init__(
+        self,
+        task: asyncio.Task[CapabilityResult],
+        cancel_event: asyncio.Event,
+        cancellable: bool = True,
+    ) -> None:
+        self._task, self._cancel_event, self._cancellable = task, cancel_event, cancellable
+
+    async def result(self) -> CapabilityResult:
+        return await asyncio.shield(self._task)
+
+    async def request_cancel(self) -> CancellationDisposition:
+        if self._task.done():
+            return CancellationDisposition.ALREADY_COMPLETE
+        if not self._cancellable:
+            return CancellationDisposition.UNSUPPORTED
+        self._cancel_event.set()
+        return CancellationDisposition.ACCEPTED
+
+    async def detach(self) -> None:
+        self._task.add_done_callback(
+            lambda task: task.exception() if not task.cancelled() else None
+        )
 
 
 class CapabilityAdapter(Protocol):
