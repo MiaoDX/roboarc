@@ -9,6 +9,8 @@ RoboArc keeps Blockly editor state, workflow semantics, and robot transport
 details separate. The browser authoring surface compiles to a small,
 versioned Workflow IR with `sequence`, `wait`, and `capability` nodes.
 
+RoboArc is inspired by [CyberDog VP](https://github.com/MiRoboticsLab/interaction/tree/rolling/cyberdog_vp).
+
 <p><a href="https://miaodx.com/roboarc/?review=tiago-look-and-say"><strong>Open the TIAGo &quot;Look and say&quot; demo -&gt;</strong></a></p>
 
 <p align="center">
