@@ -145,6 +145,13 @@ class Runtime:
     def list_runs(self) -> tuple[RunHandle, ...]:
         return tuple(self._runs.values())
 
+    def clear_finished_runs(self) -> int:
+        """Drop completed runs and their retained event histories."""
+        finished = tuple(run_id for run_id, handle in self._runs.items() if handle.done)
+        for run_id in finished:
+            del self._runs[run_id]
+        return len(finished)
+
     async def shutdown(self) -> None:
         active = [handle for handle in self._runs.values() if not handle.done]
         for handle in active:

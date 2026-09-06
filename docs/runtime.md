@@ -136,6 +136,11 @@ HTTP handles discovery, validation, control, snapshots, and replay. WebSocket pr
 
 ## Profiles and compatibility preflight
 
+The in-memory runtime retains completed runs so their event streams can be
+replayed. Long-lived callers that no longer need that history may call
+`Runtime.clear_finished_runs()` to explicitly release completed run handles and
+their retained events; active runs are never removed.
+
 `roboarc serve --profile PROFILE_ID` selects one adapter at process startup.
 The supported core profiles are `mock` and `deterministic-simulation`; the
 isolated adapters provide `tiago-sim` and `reachy2-sim`. `GET /api/v1/profile`

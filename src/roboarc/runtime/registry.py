@@ -38,6 +38,10 @@ class CapabilityRegistry:
 
         self._profile = profile
         self._manifests = mapping
+        versions: dict[str, list[int]] = {}
+        for capability_id, version in mapping:
+            versions.setdefault(capability_id, []).append(version)
+        self._versions = {key: tuple(sorted(values)) for key, values in versions.items()}
 
     @classmethod
     def from_adapter(cls, adapter: CapabilityAdapter) -> CapabilityRegistry:
@@ -61,6 +65,4 @@ class CapabilityRegistry:
         return manifest
 
     def versions(self, capability_id: str) -> tuple[int, ...]:
-        return tuple(
-            sorted(version for (item_id, version) in self._manifests if item_id == capability_id)
-        )
+        return self._versions.get(capability_id, ())

@@ -33,6 +33,18 @@ async def test_successful_sequence_has_monotonic_observable_events(workflow_docu
 
 
 @pytest.mark.asyncio
+async def test_finished_runs_can_be_explicitly_evicted(workflow_document) -> None:
+    runtime = Runtime(MockAdapter())
+    handle = await runtime.start(workflow_document(capability_id="demo.instant_success"))
+    await handle.result()
+
+    assert runtime.get_run(handle.run_id) is handle
+    assert runtime.clear_finished_runs() == 1
+    assert runtime.get_run(handle.run_id) is None
+    assert runtime.clear_finished_runs() == 0
+
+
+@pytest.mark.asyncio
 async def test_failure_is_fail_fast(workflow_document) -> None:
     adapter = MockAdapter()
     runtime = Runtime(adapter)
