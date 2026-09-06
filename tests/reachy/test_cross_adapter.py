@@ -4,50 +4,39 @@ from itertools import pairwise
 
 import pytest
 
-from roboarc.contracts import EventType, RunState, WorkflowDocument
+from roboarc.contracts import EventType, RunState
 from roboarc.runtime import DeterministicSimulationAdapter, Runtime
 from roboarc_reachy import ReachyAdapter
 
 
-def _workflow(profile_id: str, capability_id: str, args: dict[str, object]) -> WorkflowDocument:
-    return WorkflowDocument.model_validate(
-        {
-            "workflow_schema_version": 1,
-            "id": f"{profile_id}-observable",
-            "name": f"{profile_id} observable workflow",
-            "profile_id": profile_id,
-            "workflow": {
-                "id": "visible-motion",
-                "type": "capability",
-                "capability": {"id": capability_id, "version": 1},
-                "args": args,
-            },
-        }
-    )
-
-
 @pytest.mark.asyncio
-async def test_profile_appropriate_workflows_preserve_runtime_invariants() -> None:
+async def test_profile_appropriate_workflows_preserve_runtime_invariants(workflow_document) -> None:
     simulation = DeterministicSimulationAdapter(step_ms=10)
     cases = (
         (
             simulation,
-            _workflow(
-                "deterministic-simulation",
-                "simulation.navigate",
-                {"target_x": 1.0, "target_y": 0.5, "duration_ms": 20},
+            workflow_document(
+                profile_id="deterministic-simulation",
+                capability_id="simulation.navigate",
+                args={"target_x": 1.0, "target_y": 0.5, "duration_ms": 20},
+                document_id="deterministic-simulation-observable",
+                name="deterministic-simulation observable workflow",
+                node_id="visible-motion",
             ),
         ),
         (
             ReachyAdapter(),
-            _workflow(
-                "reachy2-sim",
-                "reachy.arm.gesture",
-                {
+            workflow_document(
+                profile_id="reachy2-sim",
+                capability_id="reachy.arm.gesture",
+                args={
                     "gesture": "raise",
                     "side": "left",
                     "duration_ms": 100,
                 },
+                document_id="reachy2-sim-observable",
+                name="reachy2-sim observable workflow",
+                node_id="visible-motion",
             ),
         ),
     )

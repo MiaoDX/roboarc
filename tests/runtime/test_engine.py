@@ -4,38 +4,23 @@ import asyncio
 
 import pytest
 
-from roboarc.contracts import ErrorCode, EventType, RunState, WorkflowDocument
+from roboarc.contracts import ErrorCode, EventType, RunState
 from roboarc.runtime import MockAdapter, Runtime, RuntimeConfig
 
 
-def workflow_for(capability_id: str, args: dict[str, object] | None = None) -> WorkflowDocument:
-    return WorkflowDocument.model_validate(
-        {
-            "workflow_schema_version": 1,
-            "id": "runtime-test",
-            "name": "Runtime test",
-            "workflow": {
-                "id": "root",
-                "type": "sequence",
-                "children": [
-                    {
-                        "id": "action",
-                        "type": "capability",
-                        "capability": {"id": capability_id, "version": 1},
-                        "args": args or {},
-                    },
-                    {"id": "after", "type": "wait", "duration_ms": 1},
-                ],
-            },
-        }
-    )
-
-
 @pytest.mark.asyncio
-async def test_successful_sequence_has_monotonic_observable_events() -> None:
+async def test_successful_sequence_has_monotonic_observable_events(workflow_document) -> None:
     adapter = MockAdapter()
     runtime = Runtime(adapter)
-    handle = await runtime.start(workflow_for("demo.staged_action", {"stage_delay_ms": 1}))
+    handle = await runtime.start(
+        workflow_document(
+            capability_id="demo.staged_action",
+            args={"stage_delay_ms": 1},
+            document_id="runtime-test",
+            name="Runtime test",
+            wait_after_ms=1,
+        )
+    )
     result = await handle.result()
     events = handle.stream.snapshot()
 
@@ -48,10 +33,12 @@ async def test_successful_sequence_has_monotonic_observable_events() -> None:
 
 
 @pytest.mark.asyncio
-async def test_failure_is_fail_fast() -> None:
+async def test_failure_is_fail_fast(workflow_document) -> None:
     adapter = MockAdapter()
     runtime = Runtime(adapter)
-    handle = await runtime.start(workflow_for("demo.fail", {"message": "expected"}))
+    handle = await runtime.start(
+        workflow_document(capability_id="demo.fail", args={"message": "expected"})
+    )
     result = await handle.result()
     events = handle.stream.snapshot()
 
@@ -63,13 +50,15 @@ async def test_failure_is_fail_fast() -> None:
 
 
 @pytest.mark.asyncio
-async def test_cancellable_operation_only_reports_canceled_after_acknowledgement() -> None:
+async def test_cancellable_operation_only_reports_canceled_after_acknowledgement(
+    workflow_document,
+) -> None:
     adapter = MockAdapter()
     runtime = Runtime(adapter, config=RuntimeConfig(cancel_grace_ms=100))
     handle = await runtime.start(
-        workflow_for(
-            "demo.cancellable_action",
-            {"duration_ms": 500, "tick_ms": 5, "cleanup_ms": 5},
+        workflow_document(
+            capability_id="demo.cancellable_action",
+            args={"duration_ms": 500, "tick_ms": 5, "cleanup_ms": 5},
         )
     )
     await asyncio.sleep(0.02)
@@ -90,11 +79,11 @@ async def test_cancellable_operation_only_reports_canceled_after_acknowledgement
 
 
 @pytest.mark.asyncio
-async def test_uncancellable_operation_does_not_lie_about_cancellation() -> None:
+async def test_uncancellable_operation_does_not_lie_about_cancellation(workflow_document) -> None:
     adapter = MockAdapter()
     runtime = Runtime(adapter, config=RuntimeConfig(cancel_grace_ms=5))
     handle = await runtime.start(
-        workflow_for("demo.uncancellable_action", {"duration_ms": 30})
+        workflow_document(capability_id="demo.uncancellable_action", args={"duration_ms": 30})
     )
     await asyncio.sleep(0.002)
     await handle.cancel()
