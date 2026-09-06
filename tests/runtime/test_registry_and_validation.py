@@ -76,24 +76,7 @@ def test_arguments_are_strict_and_typed() -> None:
     assert {issue.code for issue in report.issues} == {"invalid_input", "unknown_input"}
 
 
-def _workflow(profile_id: str | None, version: int = 1) -> WorkflowDocument:
-    payload: dict[str, object] = {
-        "workflow_schema_version": 1,
-        "id": "compatibility-test",
-        "name": "Compatibility",
-        "workflow": {
-            "id": "action",
-            "type": "capability",
-            "capability": {"id": "demo.action", "version": version},
-            "args": {},
-        },
-    }
-    if profile_id is not None:
-        payload["profile_id"] = profile_id
-    return WorkflowDocument.model_validate(payload)
-
-
-def test_compatibility_report_is_node_keyed_and_conservative() -> None:
+def test_compatibility_report_is_node_keyed_and_conservative(workflow_document) -> None:
     manifest = CapabilityManifest(
         id="demo.action",
         version=1,
@@ -103,7 +86,14 @@ def test_compatibility_report_is_node_keyed_and_conservative() -> None:
     )
     runtime = Runtime(_NoInvokeAdapter("active", (manifest,)))
 
-    declared = runtime.compatibility(_workflow("declared-source"))
+    declared = runtime.compatibility(
+        workflow_document(
+            capability_id="demo.action",
+            profile_id="declared-source",
+            document_id="compatibility-test",
+            name="Compatibility",
+        )
+    )
     assert declared.compatible
     assert declared.nodes["action"].status is CompatibilityStatus.COMPATIBLE
     assert (
@@ -111,12 +101,26 @@ def test_compatibility_report_is_node_keyed_and_conservative() -> None:
         is CompatibilityReason.DECLARED_PROFILE_COMPATIBILITY
     )
 
-    unknown = runtime.compatibility(_workflow("other-source"))
+    unknown = runtime.compatibility(
+        workflow_document(
+            capability_id="demo.action",
+            profile_id="other-source",
+            document_id="compatibility-test",
+            name="Compatibility",
+        )
+    )
     assert not unknown.compatible
     assert unknown.nodes["action"].status is CompatibilityStatus.UNKNOWN
     assert unknown.nodes["action"].capability.version == 1
 
-    incompatible = runtime.compatibility(_workflow(None, version=2))
+    incompatible = runtime.compatibility(
+        workflow_document(
+            capability_id="demo.action",
+            version=2,
+            document_id="compatibility-test",
+            name="Compatibility",
+        )
+    )
     assert incompatible.nodes["action"].status is CompatibilityStatus.INCOMPATIBLE
 
     missing = runtime.compatibility(
@@ -137,14 +141,21 @@ def test_compatibility_report_is_node_keyed_and_conservative() -> None:
 
 
 @pytest.mark.asyncio
-async def test_non_compatible_workflow_blocks_before_invocation() -> None:
+async def test_non_compatible_workflow_blocks_before_invocation(workflow_document) -> None:
     manifest = CapabilityManifest(
         id="demo.action", version=1, title="Action", category="Demo"
     )
     adapter = _NoInvokeAdapter("active", (manifest,))
 
     with pytest.raises(WorkflowValidationError) as raised:
-        await Runtime(adapter).start(_workflow("foreign"))
+        await Runtime(adapter).start(
+            workflow_document(
+                capability_id="demo.action",
+                profile_id="foreign",
+                document_id="compatibility-test",
+                name="Compatibility",
+            )
+        )
 
     assert raised.value.report.issues[0].code == "profile_compatibility_unknown"
     assert adapter.invocations == 0
