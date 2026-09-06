@@ -15,7 +15,6 @@ from roboarc.contracts import (
     RunState,
     ValueSpec,
     ValueType,
-    WorkflowDocument,
 )
 from roboarc.runtime import CancellationDisposition, Runtime, RuntimeConfig
 from roboarc.runtime.context import ExecutionContext
@@ -112,26 +111,18 @@ class _BadOutputAdapter:
         return _BadOutputInvocation()
 
 
-def _workflow(capability_id: str) -> WorkflowDocument:
-    return WorkflowDocument.model_validate(
-        {
-            "workflow_schema_version": 1,
-            "id": "adapter-contract-test",
-            "name": "Adapter contract test",
-            "workflow": {
-                "id": "action",
-                "type": "capability",
-                "capability": {"id": capability_id, "version": 1},
-                "args": {},
-            },
-        }
-    )
-
-
 @pytest.mark.asyncio
-async def test_timeout_is_reported_only_after_native_terminal_acknowledgement() -> None:
+async def test_timeout_is_reported_only_after_native_terminal_acknowledgement(
+    workflow_document,
+) -> None:
     runtime = Runtime(_TimeoutAdapter(), config=RuntimeConfig(cancel_grace_ms=50))
-    result = await runtime.run(_workflow("test.slow"))
+    result = await runtime.run(
+        workflow_document(
+            capability_id="test.slow",
+            document_id="adapter-contract-test",
+            name="Adapter contract test",
+        )
+    )
 
     assert result.state is RunState.TIMED_OUT
     assert result.error is not None
@@ -140,9 +131,9 @@ async def test_timeout_is_reported_only_after_native_terminal_acknowledgement() 
 
 
 @pytest.mark.asyncio
-async def test_invalid_adapter_output_is_a_contract_failure() -> None:
+async def test_invalid_adapter_output_is_a_contract_failure(workflow_document) -> None:
     runtime = Runtime(_BadOutputAdapter())
-    result = await runtime.run(_workflow("test.bad_output"))
+    result = await runtime.run(workflow_document(capability_id="test.bad_output"))
 
     assert result.state is RunState.FAILED
     assert result.error is not None

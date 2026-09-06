@@ -4,32 +4,24 @@ import asyncio
 
 import pytest
 
-from roboarc.contracts import EventType, RunState, WorkflowDocument
+from roboarc.contracts import EventType, RunState
 from roboarc.runtime import Runtime, RuntimeConfig
 from roboarc.runtime.simulation import DeterministicSimulationAdapter, SimulatedPose
 
 
-def _workflow(args: dict[str, object]) -> WorkflowDocument:
-    return WorkflowDocument.model_validate(
-        {
-            "workflow_schema_version": 1,
-            "id": "simulation-test",
-            "name": "Simulation test",
-            "workflow": {
-                "id": "navigate",
-                "type": "capability",
-                "capability": {"id": "simulation.navigate", "version": 1},
-                "args": args,
-            },
-        }
-    )
-
-
 @pytest.mark.asyncio
-async def test_navigation_emits_correlated_pose_trajectory_and_progress() -> None:
+async def test_navigation_emits_correlated_pose_trajectory_and_progress(workflow_document) -> None:
     adapter = DeterministicSimulationAdapter(step_ms=1)
     runtime = Runtime(adapter)
-    handle = await runtime.start(_workflow({"target_x": 2, "target_y": -1, "duration_ms": 3}))
+    handle = await runtime.start(
+        workflow_document(
+            capability_id="simulation.navigate",
+            args={"target_x": 2, "target_y": -1, "duration_ms": 3},
+            document_id="simulation-test",
+            name="Simulation test",
+            node_id="navigate",
+        )
+    )
     result = await handle.result()
 
     assert result.state is RunState.SUCCEEDED
@@ -67,10 +59,14 @@ async def test_navigation_emits_correlated_pose_trajectory_and_progress() -> Non
 
 
 @pytest.mark.asyncio
-async def test_simulation_state_evolution_is_repeatable() -> None:
+async def test_simulation_state_evolution_is_repeatable(workflow_document) -> None:
     adapter = DeterministicSimulationAdapter(step_ms=1)
     runtime = Runtime(adapter)
-    workflow = _workflow({"target_x": 1.5, "target_y": 3, "duration_ms": 2})
+    workflow = workflow_document(
+        capability_id="simulation.navigate",
+        args={"target_x": 1.5, "target_y": 3, "duration_ms": 2},
+        node_id="navigate",
+    )
 
     first = await runtime.run(workflow)
     first_samples = tuple(
@@ -87,10 +83,16 @@ async def test_simulation_state_evolution_is_repeatable() -> None:
 
 
 @pytest.mark.asyncio
-async def test_simulation_cancellation_records_terminal_canceled_action() -> None:
+async def test_simulation_cancellation_records_terminal_canceled_action(workflow_document) -> None:
     adapter = DeterministicSimulationAdapter(step_ms=5)
     runtime = Runtime(adapter, config=RuntimeConfig(cancel_grace_ms=100))
-    handle = await runtime.start(_workflow({"target_x": 10, "target_y": 0, "duration_ms": 200}))
+    handle = await runtime.start(
+        workflow_document(
+            capability_id="simulation.navigate",
+            args={"target_x": 10, "target_y": 0, "duration_ms": 200},
+            node_id="navigate",
+        )
+    )
     await asyncio.sleep(0.01)
     assert await handle.cancel()
     result = await handle.result()
