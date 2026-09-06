@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 import pytest
 
@@ -62,6 +64,30 @@ class FibonacciServer(Node):
         return super().destroy_node()
 
 
+@contextmanager
+def running_fibonacci_server(
+    *, mode: str = "success", delay_s: float = 0.0
+) -> Iterator[FibonacciServer]:
+    """Run the deterministic action server on a background ROS executor."""
+    rclpy.init()
+    server = FibonacciServer()
+    server.mode = mode
+    server.delay_s = delay_s
+    executor = MultiThreadedExecutor(num_threads=2)
+    executor.add_node(server)
+    thread = threading.Thread(target=executor.spin, daemon=True)
+    thread.start()
+    try:
+        yield server
+    finally:
+        executor.shutdown()
+        server.destroy_node()
+        thread.join(timeout=2)
+        assert not thread.is_alive()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
 def test_direct_action_server_client_smoke() -> None:
     rclpy.init()
     server = FibonacciServer()
@@ -91,56 +117,37 @@ def test_direct_action_server_client_smoke() -> None:
 
 @pytest.mark.asyncio
 async def test_workflow_runtime_reaches_ros_action_result() -> None:
-    rclpy.init()
-    server = FibonacciServer()
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(server)
-    thread = threading.Thread(target=executor.spin, daemon=True)
-    thread.start()
-    adapter = RosActionAdapter()
-    workflow = WorkflowDocument.model_validate(
-        {
-            "workflow_schema_version": 1,
-            "id": "ros-proof",
-            "name": "ROS proof",
-            "workflow": {
-                "id": "fib",
-                "type": "capability",
-                "capability": {"id": "demo.ros_fibonacci", "version": 1},
-                "args": {"order": 5},
-            },
-        }
-    )
-    try:
-        handle = await Runtime(adapter).start(workflow)
-        result = await handle.result()
-        assert result.state is RunState.SUCCEEDED
-        finished = next(
-            event
-            for event in reversed(handle.stream.snapshot())
-            if event.type is EventType.NODE_FINISHED
+    with running_fibonacci_server():
+        adapter = RosActionAdapter()
+        workflow = WorkflowDocument.model_validate(
+            {
+                "workflow_schema_version": 1,
+                "id": "ros-proof",
+                "name": "ROS proof",
+                "workflow": {
+                    "id": "fib",
+                    "type": "capability",
+                    "capability": {"id": "demo.ros_fibonacci", "version": 1},
+                    "args": {"order": 5},
+                },
+            }
         )
-        assert finished.data["output"]["sequence"] == "[0, 1, 1, 2, 3, 5]"
-    finally:
-        await adapter.close()
-        executor.shutdown()
-        server.destroy_node()
-        thread.join(timeout=2)
-        assert not thread.is_alive()
-        if rclpy.ok():
-            rclpy.shutdown()
+        try:
+            handle = await Runtime(adapter).start(workflow)
+            result = await handle.result()
+            assert result.state is RunState.SUCCEEDED
+            finished = next(
+                event
+                for event in reversed(handle.stream.snapshot())
+                if event.type is EventType.NODE_FINISHED
+            )
+            assert finished.data["output"]["sequence"] == "[0, 1, 1, 2, 3, 5]"
+        finally:
+            await adapter.close()
 
 
 @pytest.mark.asyncio
 async def test_ros_abort_and_unavailable_are_failures() -> None:
-    rclpy.init()
-    server = FibonacciServer()
-    server.mode = "abort"
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(server)
-    thread = threading.Thread(target=executor.spin, daemon=True)
-    thread.start()
-    adapter = RosActionAdapter()
     workflow = WorkflowDocument.model_validate(
         {
             "workflow_schema_version": 1,
@@ -154,19 +161,15 @@ async def test_ros_abort_and_unavailable_are_failures() -> None:
             },
         }
     )
-    try:
-        result = await Runtime(adapter).run(workflow)
-        assert result.state is RunState.FAILED
-        assert result.error is not None
-        assert result.error.details["ros_status"] == "aborted"
-    finally:
-        await adapter.close()
-        executor.shutdown()
-        server.destroy_node()
-        thread.join(timeout=2)
-        assert not thread.is_alive()
-        if rclpy.ok():
-            rclpy.shutdown()
+    with running_fibonacci_server(mode="abort"):
+        adapter = RosActionAdapter()
+        try:
+            result = await Runtime(adapter).run(workflow)
+            assert result.state is RunState.FAILED
+            assert result.error is not None
+            assert result.error.details["ros_status"] == "aborted"
+        finally:
+            await adapter.close()
 
     rclpy.init()
     unavailable = RosActionAdapter("roboarc/missing")
@@ -181,14 +184,6 @@ async def test_ros_abort_and_unavailable_are_failures() -> None:
 
 @pytest.mark.asyncio
 async def test_native_progress_and_cancellation_are_truthful() -> None:
-    rclpy.init()
-    server = FibonacciServer()
-    server.delay_s = 0.02
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(server)
-    thread = threading.Thread(target=executor.spin, daemon=True)
-    thread.start()
-    adapter = RosActionAdapter()
     workflow = WorkflowDocument.model_validate(
         {
             "workflow_schema_version": 1,
@@ -202,43 +197,31 @@ async def test_native_progress_and_cancellation_are_truthful() -> None:
             },
         }
     )
-    try:
-        handle = await Runtime(adapter).start(workflow)
-        while not any(
-            event.type is EventType.CAPABILITY_PROGRESS for event in handle.stream.snapshot()
-        ):
-            await asyncio.sleep(0.005)
-        assert await handle.cancel()
-        result = await handle.result()
-        assert result.state is RunState.CANCELED
-        events = handle.stream.snapshot()
-        progress = [e for e in events if e.type is EventType.CAPABILITY_PROGRESS]
-        assert progress
-        assert all(e.data["source"] == ProgressSource.NATIVE.value for e in progress)
-        assert [e.seq for e in events] == list(range(1, len(events) + 1))
-        cancel_seq = next(e.seq for e in events if e.type is EventType.RUN_CANCEL_REQUESTED)
-        finished_seq = next(e.seq for e in events if e.type is EventType.RUN_FINISHED)
-        assert cancel_seq < finished_seq
-    finally:
-        await adapter.close()
-        executor.shutdown()
-        server.destroy_node()
-        thread.join(timeout=2)
-        assert not thread.is_alive()
-        if rclpy.ok():
-            rclpy.shutdown()
+    with running_fibonacci_server(delay_s=0.02):
+        adapter = RosActionAdapter()
+        try:
+            handle = await Runtime(adapter).start(workflow)
+            while not any(
+                event.type is EventType.CAPABILITY_PROGRESS for event in handle.stream.snapshot()
+            ):
+                await asyncio.sleep(0.005)
+            assert await handle.cancel()
+            result = await handle.result()
+            assert result.state is RunState.CANCELED
+            events = handle.stream.snapshot()
+            progress = [e for e in events if e.type is EventType.CAPABILITY_PROGRESS]
+            assert progress
+            assert all(e.data["source"] == ProgressSource.NATIVE.value for e in progress)
+            assert [e.seq for e in events] == list(range(1, len(events) + 1))
+            cancel_seq = next(e.seq for e in events if e.type is EventType.RUN_CANCEL_REQUESTED)
+            finished_seq = next(e.seq for e in events if e.type is EventType.RUN_FINISHED)
+            assert cancel_seq < finished_seq
+        finally:
+            await adapter.close()
 
 
 @pytest.mark.asyncio
 async def test_timeout_reports_native_terminal_cancellation() -> None:
-    rclpy.init()
-    server = FibonacciServer()
-    server.delay_s = 0.03
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(server)
-    thread = threading.Thread(target=executor.spin, daemon=True)
-    thread.start()
-    adapter = RosActionAdapter(timeout_ms=20)
     workflow = WorkflowDocument.model_validate(
         {
             "workflow_schema_version": 1,
@@ -252,31 +235,20 @@ async def test_timeout_reports_native_terminal_cancellation() -> None:
             },
         }
     )
-    try:
-        result = await Runtime(adapter, config=RuntimeConfig(cancel_grace_ms=500)).run(workflow)
-        assert result.state is RunState.TIMED_OUT
-        assert result.error is not None
-        assert result.error.details["terminal_status"] == "canceled"
-        assert result.error.details["disposition"] == "accepted"
-    finally:
-        await adapter.close()
-        executor.shutdown()
-        server.destroy_node()
-        thread.join(timeout=2)
-        assert not thread.is_alive()
-        if rclpy.ok():
-            rclpy.shutdown()
+    with running_fibonacci_server(delay_s=0.03):
+        adapter = RosActionAdapter(timeout_ms=20)
+        try:
+            result = await Runtime(adapter, config=RuntimeConfig(cancel_grace_ms=500)).run(workflow)
+            assert result.state is RunState.TIMED_OUT
+            assert result.error is not None
+            assert result.error.details["terminal_status"] == "canceled"
+            assert result.error.details["disposition"] == "accepted"
+        finally:
+            await adapter.close()
 
 
 @pytest.mark.asyncio
 async def test_rejection_and_transport_exception_are_stable_failures() -> None:
-    rclpy.init()
-    server = FibonacciServer()
-    server.mode = "reject"
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(server)
-    thread = threading.Thread(target=executor.spin, daemon=True)
-    thread.start()
     workflow = WorkflowDocument.model_validate(
         {
             "workflow_schema_version": 1,
@@ -290,20 +262,15 @@ async def test_rejection_and_transport_exception_are_stable_failures() -> None:
             },
         }
     )
-    adapter = RosActionAdapter()
-    try:
-        result = await Runtime(adapter).run(workflow)
-        assert result.state is RunState.FAILED
-        assert result.error is not None
-        assert result.error.details["ros_status"] == "rejected"
-    finally:
-        await adapter.close()
-        executor.shutdown()
-        server.destroy_node()
-        thread.join(timeout=2)
-        assert not thread.is_alive()
-        if rclpy.ok():
-            rclpy.shutdown()
+    with running_fibonacci_server(mode="reject"):
+        adapter = RosActionAdapter()
+        try:
+            result = await Runtime(adapter).run(workflow)
+            assert result.state is RunState.FAILED
+            assert result.error is not None
+            assert result.error.details["ros_status"] == "rejected"
+        finally:
+            await adapter.close()
 
     rclpy.init()
     broken = RosActionAdapter()
@@ -320,15 +287,6 @@ async def test_rejection_and_transport_exception_are_stable_failures() -> None:
 
 @pytest.mark.asyncio
 async def test_accepted_but_nonterminal_cancel_is_incomplete() -> None:
-    rclpy.init()
-    server = FibonacciServer()
-    server.mode = "ignore_cancel"
-    server.delay_s = 0.02
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(server)
-    thread = threading.Thread(target=executor.spin, daemon=True)
-    thread.start()
-    adapter = RosActionAdapter()
     workflow = WorkflowDocument.model_validate(
         {
             "workflow_schema_version": 1,
@@ -342,37 +300,26 @@ async def test_accepted_but_nonterminal_cancel_is_incomplete() -> None:
             },
         }
     )
-    try:
-        handle = await Runtime(adapter, config=RuntimeConfig(cancel_grace_ms=5)).start(workflow)
-        while not any(e.type is EventType.CAPABILITY_PROGRESS for e in handle.stream.snapshot()):
-            await asyncio.sleep(0.005)
-        assert await handle.cancel()
-        result = await handle.result()
-        assert result.state is RunState.FAILED
-        assert result.error is not None
-        assert result.error.code.value == "cancellation_incomplete"
-        assert result.error.details["disposition"] == "accepted"
-    finally:
-        await adapter.close()
-        executor.shutdown()
-        server.destroy_node()
-        thread.join(timeout=2)
-        assert not thread.is_alive()
-        if rclpy.ok():
-            rclpy.shutdown()
+    with running_fibonacci_server(mode="ignore_cancel", delay_s=0.02):
+        adapter = RosActionAdapter()
+        try:
+            handle = await Runtime(adapter, config=RuntimeConfig(cancel_grace_ms=5)).start(workflow)
+            while not any(
+                e.type is EventType.CAPABILITY_PROGRESS for e in handle.stream.snapshot()
+            ):
+                await asyncio.sleep(0.005)
+            assert await handle.cancel()
+            result = await handle.result()
+            assert result.state is RunState.FAILED
+            assert result.error is not None
+            assert result.error.code.value == "cancellation_incomplete"
+            assert result.error.details["disposition"] == "accepted"
+        finally:
+            await adapter.close()
 
 
 @pytest.mark.asyncio
 async def test_timeout_grace_expiry_is_cancellation_incomplete() -> None:
-    rclpy.init()
-    server = FibonacciServer()
-    server.mode = "ignore_cancel"
-    server.delay_s = 0.02
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(server)
-    thread = threading.Thread(target=executor.spin, daemon=True)
-    thread.start()
-    adapter = RosActionAdapter(timeout_ms=10)
     workflow = WorkflowDocument.model_validate(
         {
             "workflow_schema_version": 1,
@@ -386,20 +333,16 @@ async def test_timeout_grace_expiry_is_cancellation_incomplete() -> None:
             },
         }
     )
-    try:
-        result = await Runtime(adapter, config=RuntimeConfig(cancel_grace_ms=5)).run(workflow)
-        assert result.state is RunState.FAILED
-        assert result.error is not None
-        assert result.error.code.value == "cancellation_incomplete"
-        assert result.error.details == {
-            "disposition": "accepted",
-            "timeout_ms": 10,
-        }
-    finally:
-        await adapter.close()
-        executor.shutdown()
-        server.destroy_node()
-        thread.join(timeout=2)
-        assert not thread.is_alive()
-        if rclpy.ok():
-            rclpy.shutdown()
+    with running_fibonacci_server(mode="ignore_cancel", delay_s=0.02):
+        adapter = RosActionAdapter(timeout_ms=10)
+        try:
+            result = await Runtime(adapter, config=RuntimeConfig(cancel_grace_ms=5)).run(workflow)
+            assert result.state is RunState.FAILED
+            assert result.error is not None
+            assert result.error.code.value == "cancellation_incomplete"
+            assert result.error.details == {
+                "disposition": "accepted",
+                "timeout_ms": 10,
+            }
+        finally:
+            await adapter.close()
